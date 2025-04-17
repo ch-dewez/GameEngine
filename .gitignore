@@ -1,0 +1,75 @@
+# Build directories
+build/
+build/bin/
+build/bin-int/
+bin/
+bin-int/
+
+# CMake specific
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+.cmake/
+CMakeSettings.json
+CMakeUserPresets.json
+.cache/
+
+# Visual Studio files
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+
+# Xcode files
+*.xcodeproj/
+*.xcworkspace/
+.DS_Store
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Debug files
+*.pdb
+*.ilk
+*.exp
+
+# Object files
+*.o
+*.obj
+
+# Libraries
+*.lib
+*.a
+*.dll
+*.so
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Vendor dependencies
+vendor/glfw-*
+vendor/glm-*
+
+# Logs and databases
+*.log
+*.sqlite
+
+# OS generated files
+Thumbs.db
+.DS_Store?
+ehthumbs.db
+Icon?
