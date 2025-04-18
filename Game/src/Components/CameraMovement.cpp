@@ -29,6 +29,7 @@ void CameraMovement::update() {
     
     // Handle mouse rotation
     glm::vec2 mouseDelta = input.getMouseDelta();
+    std::cout << "x " << mouseDelta.x << " y " << mouseDelta.y << std::endl;
     yaw += mouseDelta.x * -1 * mouseSensitivity;
     pitch -= mouseDelta.y * -1 * mouseSensitivity; // Inverted Y for natural camera feel
     
@@ -41,13 +42,9 @@ void CameraMovement::update() {
     //forward.x = self.angles[1].sin();
     forward.x += sin(yaw);
     forward.y += sin(pitch) * cos(yaw);
+    forward.y = 0;
     forward.z += cos(pitch) * cos(yaw);
 
-    std::cout << "forward" << std::endl;
-    std::cout << forward.x << " ";
-    std::cout << forward.y << " ";
-    std::cout << forward.z << std::endl;
-    
     //forward = transform->getForwardVector();
     // Update camera orientation
     transform->setForwardVector(forward);
@@ -89,6 +86,7 @@ void CameraMovement::update() {
     std::cout << forward.x << " ";
     std::cout << forward.y << " ";
     std::cout << forward.z << std::endl;
+    
 
     // Apply movement in camera-relative directions
     if (delta != glm::vec3(0.0)) {

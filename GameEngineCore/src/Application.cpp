@@ -4,6 +4,7 @@
 #include "Ressources/RessourceManager.h"
 #include "Ressources/DescriptorsManager.h"
 #include "Scene/Components/Renderer.h"
+#include "Input.h"
 
 Application::Application(char* title, uint32_t width, uint32_t height, Engine::Scene* defaultScene)
 : m_window(title, width, height)
@@ -54,6 +55,7 @@ void Application::Run()
         m_renderer->render(*m_scene);
 
         m_window.pollEvents();
+        Engine::Input::Instance().Update();
     }
 
     Engine::Renderer::VulkanApi::Instance().deviceWaitIdle();

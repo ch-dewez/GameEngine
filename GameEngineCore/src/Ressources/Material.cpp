@@ -27,7 +27,7 @@ MaterialTemplate::MaterialTemplate(size_t matSize, std::shared_ptr<Pipeline> pip
 
         auto descriptorBuilder = ::Engine::Ressources::DescriptorBuilder();
         descriptorBuilder
-            .bind_buffer(0, &matBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+            .bind_buffer(0, &matBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_matDescriptorSet[i] = descriptorBuilder.build(m_matSetLayout);
     }
 };

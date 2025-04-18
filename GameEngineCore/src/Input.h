@@ -22,6 +22,7 @@ public:
     void addOnKeyReleased(std::function<void(int)> callback);
     bool isKeyPressed(int key);
 
+    void Update();
     glm::vec2 getMouseDelta();
     glm::vec2 getMousePosition();
 private:
@@ -30,6 +31,7 @@ private:
 
     glm::vec2 mousePos;
     glm::vec2 lastMousePos;
+    glm::vec2 mouseDelta;
 
     GLFWwindow* m_window;
     static void glfwKeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

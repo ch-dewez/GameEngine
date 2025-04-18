@@ -1,8 +1,8 @@
 #include "Renderer.h"
+#include <cstdint>
 #include <vector>
 #include <glm/glm.hpp>
 #include "Ressources/UniformBuffer.h"
-
 
 
 namespace Engine {
@@ -30,8 +30,9 @@ public:
 private:
     std::vector<VkDescriptorSet> m_globalDescriptorSets;
     std::unique_ptr<Engine::Ressources::UniformBuffer> m_globalUniformBuffer;
-    std::unique_ptr<Engine::Ressources::UniformBuffer> m_modelUniformBuffer;
+    std::unique_ptr<Engine::Ressources::UniformBuffer> m_lightsUniformBuffer;
     std::vector<VkDescriptorSet> m_modelDescriptorSets;
+    std::unique_ptr<Engine::Ressources::UniformBuffer> m_modelUniformBuffer;
     uint32_t m_nextModelBufferIndex = 0;
     std::vector<uint32_t> m_freeIndices; // Store available indices for reuse
 };

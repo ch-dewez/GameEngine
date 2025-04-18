@@ -1,5 +1,7 @@
 #include "DefaultRenderer.h"
+#include "Lights.h"
 #include "VulkanApi.h"
+#include <cstring>
 #include <map>
 #include <memory>
 #include "Ressources/DescriptorsManager.h"
@@ -9,6 +11,9 @@
 #include "Scene/Entities/Entity.h"
 #include "Scene/Components/Renderer.h"
 #include "Scene/Components/Camera.h"
+#include "Renderer/Lights.h"
+#include "Scene/Components/PointLight.h"
+#include "Scene/Components/DirectionalLight.h"
 #include "vulkan/vulkan_core.h"
 
 namespace Engine {
@@ -21,10 +26,9 @@ DefaultRenderer::DefaultRenderer()
     m_globalDescriptorSets.resize(maxFramesInFlight);
     m_modelDescriptorSets.resize(maxFramesInFlight);
 
-    // Create global UBO
     m_globalUniformBuffer = std::make_unique<Ressources::UniformBuffer>(sizeof(GlobalUniformBufferObject), maxFramesInFlight);
-    //create model ubo for all objects
     m_modelUniformBuffer = std::make_unique<Ressources::UniformBuffer>(sizeof(glm::mat4) * MAX_OBJECTS, maxFramesInFlight);
+    m_lightsUniformBuffer = std::make_unique<Ressources::UniformBuffer>(sizeof(LightEnvironment), maxFramesInFlight);
 
     // Set up global descriptor sets
     for (size_t i = 0; i < maxFramesInFlight; i++) {
@@ -33,9 +37,15 @@ DefaultRenderer::DefaultRenderer()
         globalBufferInfo.offset = 0;
         globalBufferInfo.range = sizeof(GlobalUniformBufferObject);
 
+        VkDescriptorBufferInfo lightsBufferInfo{};
+        lightsBufferInfo.buffer = m_lightsUniformBuffer->getBuffer(i);
+        lightsBufferInfo.offset = 0;
+        lightsBufferInfo.range = sizeof(LightEnvironment); // Size of one model matrix
+
         auto descriptorBuilder = Engine::Ressources::DescriptorBuilder();
         descriptorBuilder
-            .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+            .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            .bind_buffer(1, &lightsBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_globalDescriptorSets[i] = descriptorBuilder.build(globalDescriptorLayout);
 
         // Set up model descriptor sets with dynamic uniform buffer
@@ -101,16 +111,45 @@ void DefaultRenderer::render(Engine::Scene& scene) {
     // since all pipelines should share the same global descriptor set layout
     VkPipelineLayout* pipelineLayout = nullptr;
     for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
-        auto components = entity->getComponents<Engine::Components::Renderer>();
-        auto comp = components[0];
-        auto mat = comp->getMaterial();
-        auto material = mat.lock();
-        pipelineLayout = &material->getMaterialTemplate().lock()->getPipeline().lock()->getPipelineLayout();
+        auto component = entity->getComponent<Engine::Components::Renderer>();
+        pipelineLayout = &component->getMaterial().lock()->getMaterialTemplate().lock()->getPipeline().lock()->getPipelineLayout();
         break;
     }
 
+
+    // get all the lights
+    LightEnvironment lightEnvironment;
+    int pointLightIndex = 0;
+    int directionalLightIndex = 0;
+    for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
+        auto pointLights = entity->getComponents<Engine::Components::PointLight>();
+
+        for (auto pointLight : pointLights) {
+            lightEnvironment.pointLights[pointLightIndex] = pointLight->lightInfo;
+            pointLightIndex ++;
+        }
+
+        auto directionalLights = entity->getComponents<Engine::Components::DirectionalLight>();
+        for (auto directionalLight : directionalLights) {
+            lightEnvironment.directionalLights[directionalLightIndex] = directionalLight->lightInfo;
+            directionalLightIndex ++;
+        }
+    }
+
+    for (int i =pointLightIndex; i<MAX_POINT_LIGHTS;i++) {
+        memset(&lightEnvironment.pointLights[i], 0, sizeof(PointLight));
+    }
+    for (int i =directionalLightIndex; i<MAX_DIRECTIONAL_LIGHTS;i++) {
+        memset(&lightEnvironment.directionalLights[i], 0, sizeof(DirectionalLight));
+    }
+
+    lightEnvironment.nbDirectionalLight = directionalLightIndex;
+    lightEnvironment.nbPointLight = pointLightIndex;
+
+    m_lightsUniformBuffer->updateData(&lightEnvironment, sizeof(LightEnvironment), m_frameInfo.frameIndex);
+
+    VulkanApi& api = VulkanApi::Instance();
     if (pipelineLayout != VK_NULL_HANDLE) {
-        VulkanApi& api = VulkanApi::Instance();
         api.cmdBindDescriptorSets(
             m_frameInfo.commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -1,4 +1,5 @@
 #include "Input.h"
+#include "iostream"
 
 namespace Engine {
 
@@ -53,9 +54,13 @@ bool Input::isKeyPressed(int key){
     return glfwGetKey(m_window, key);
 }
 
+void Input::Update() {
+    mouseDelta = lastMousePos - mousePos;
+    lastMousePos = mousePos;
+}
 
 glm::vec2 Input::getMouseDelta(){
-    return lastMousePos - mousePos;
+    return mouseDelta;
 };
 glm::vec2 Input::getMousePosition(){
     return mousePos;

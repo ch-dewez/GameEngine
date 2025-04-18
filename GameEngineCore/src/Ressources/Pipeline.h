@@ -11,6 +11,8 @@ namespace Ressources {
 struct PipelineConfigInfo {
     std::string vertShaderPath;
     std::string fragShaderPath;
+    VkVertexInputBindingDescription bindingDescription;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
     VkPipelineViewportStateCreateInfo viewportInfo;
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
     VkPipelineRasterizationStateCreateInfo rasterizationInfo;
@@ -23,7 +25,7 @@ struct PipelineConfigInfo {
     VkRenderPass renderPass = nullptr;
     uint32_t subpass = 0;
 
-    static PipelineConfigInfo defaultPipelineConfigInfo(std::string vertShaderPath, const std::string fragShaderPath);
+    static PipelineConfigInfo defaultPipelineConfigInfo(std::string vertShaderPath, const std::string fragShaderPath, VkVertexInputBindingDescription bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription);
 };
 
 class Pipeline {

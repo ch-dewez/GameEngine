@@ -17,6 +17,9 @@ set(SHADER_PATTERNS
     "*.glsl"    # Generic GLSL shaders
 )
 
+# Create timestamps directory if it doesn't exist
+file(MAKE_DIRECTORY "${OUTPUT_DIR}/.timestamps")
+
 # Get all shader files
 file(GLOB_RECURSE SHADER_FILES)
 foreach(PATTERN ${SHADER_PATTERNS})
@@ -26,9 +29,9 @@ endforeach()
 
 # Function to determine shader stage from filename
 function(get_shader_stage FILENAME STAGE_VAR)
-    if(FILENAME MATCHES ".*vertex.*" OR FILENAME MATCHES ".*\\.vert")
+    if(FILENAME MATCHES ".*vertex.*" OR FILENAME MATCHES ".*\\.vert" OR FILENAME MATCHES ".*Vert.*")
         set(${STAGE_VAR} "-fshader-stage=vert" PARENT_SCOPE)
-    elseif(FILENAME MATCHES ".*fragment.*" OR FILENAME MATCHES ".*\\.frag")
+    elseif(FILENAME MATCHES ".*fragment.*" OR FILENAME MATCHES ".*\\.frag" OR FILENAME MATCHES ".*Frag.*")
         set(${STAGE_VAR} "-fshader-stage=frag" PARENT_SCOPE)
     elseif(FILENAME MATCHES ".*compute.*" OR FILENAME MATCHES ".*\\.comp")
         set(${STAGE_VAR} "-fshader-stage=comp" PARENT_SCOPE)
@@ -65,20 +68,37 @@ foreach(SHADER ${SHADER_FILES})
     get_shader_stage(${SHADER_NAME} SHADER_STAGE)
     
     set(OUTPUT_FILE "${OUTPUT_DIR}/${SHADER_NAME}.spv")
+    set(TIMESTAMP_FILE "${OUTPUT_DIR}/.timestamps/${SHADER_NAME}.timestamp")
     
-    message(STATUS "Compiling shader: ${SHADER} -> ${OUTPUT_FILE}")
+    # Check if recompilation is needed
+    set(SHOULD_COMPILE TRUE)
+    if(EXISTS ${OUTPUT_FILE} AND EXISTS ${TIMESTAMP_FILE})
+        file(TIMESTAMP ${SHADER} SHADER_TIMESTAMP)
+        file(READ ${TIMESTAMP_FILE} STORED_TIMESTAMP)
+        if(${STORED_TIMESTAMP} STREQUAL ${SHADER_TIMESTAMP})
+            set(SHOULD_COMPILE FALSE)
+        endif()
+    endif()
     
-    execute_process(
-        COMMAND ${GLSLC_EXECUTABLE} 
-            ${SHADER_STAGE} 
-            ${SHADER} 
-            -o ${OUTPUT_FILE}
-            --target-env=vulkan1.2
-        RESULT_VARIABLE RESULT
-        ERROR_VARIABLE ERROR_OUTPUT
-    )
-    
-    if(NOT RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to compile shader: ${SHADER}\nError: ${ERROR_OUTPUT}")
+    if(SHOULD_COMPILE)
+        message(STATUS "Compiling shader: ${SHADER} -> ${OUTPUT_FILE}")
+        
+        execute_process(
+            COMMAND ${GLSLC_EXECUTABLE} 
+                ${SHADER_STAGE} 
+                ${SHADER} 
+                -o ${OUTPUT_FILE}
+                --target-env=vulkan1.2
+            RESULT_VARIABLE RESULT
+            ERROR_VARIABLE ERROR_OUTPUT
+        )
+        
+        if(NOT RESULT EQUAL 0)
+            message(FATAL_ERROR "Failed to compile shader: ${SHADER}\nError: ${ERROR_OUTPUT}")
+        endif()
+        
+        # Update timestamp file
+        file(TIMESTAMP ${SHADER} SHADER_TIMESTAMP)
+        file(WRITE ${TIMESTAMP_FILE} ${SHADER_TIMESTAMP})
     endif()
 endforeach()

@@ -5,6 +5,7 @@
 #include "iostream"
 #include "vulkan/vulkan_core.h"
 #include <fstream>
+#include <map>
 #include <spirv_reflect.h>
 #include <utility>
 #include <vector>
@@ -14,89 +15,143 @@ namespace Ressources {
 
 static std::pair<int, int> dynamicBuffers[] = {std::pair(1, 0), std::pair(2, 0)}; // set , binding
 
-// Add this helper function to reflect shader information
-std::vector<VkDescriptorSetLayout> reflectShaderModule(const std::vector<char>& spirvCode, VkShaderStageFlags shaderStage) {
-    SpvReflectShaderModule module;
-    SpvReflectResult result = spvReflectCreateShaderModule(
-        spirvCode.size(),
-        spirvCode.data(),
-        &module);
+struct DescriptorSetLayoutData {
+    std::map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+    VkShaderStageFlags stageFlags;
+};
+
+std::map<uint32_t, VkDescriptorSetLayout> reflectShaderModule(
+    const std::vector<std::pair<std::vector<char>, VkShaderStageFlags>>& shaderData) {
+    std::map<uint32_t, DescriptorSetLayoutData> setLayouts;
     
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("Failed to create reflection module");
-    }
+    // Process each shader
+    for (const auto& [spirvCode, shaderStage] : shaderData) {
+        std::cout << "\nProcessing shader with stage: " << shaderStage << std::endl;
+        
+        SpvReflectShaderModule module;
+        SpvReflectResult result = spvReflectCreateShaderModule(
+            spirvCode.size(),
+            spirvCode.data(),
+            &module);
+        
+        if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            spvReflectDestroyShaderModule(&module);
+            throw std::runtime_error("Failed to create reflection module");
+        }
 
-    // Get descriptor set information
-    uint32_t count = 0;
-    result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        uint32_t count = 0;
+        result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
+        std::vector<SpvReflectDescriptorSet*> sets(count);
+        result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
+
+        // Process each set in the shader
+        for (auto* set : sets) {
+            auto setIndex = set->set;
+            auto& setLayout = setLayouts[setIndex];
+
+            // Process each binding in the set
+            for (uint32_t b = 0; b < set->binding_count; b++) {
+                const auto& binding = set->bindings[b];
+                auto bindingIndex = binding->binding;
+
+                std::cout << "Set: " << setIndex << " Binding: " << bindingIndex << " ShaderStage: ";
+                
+                // Print shader stage in human-readable format
+                if (shaderStage & VK_SHADER_STAGE_VERTEX_BIT) {
+                    std::cout << "VERTEX";
+                }
+                if (shaderStage & VK_SHADER_STAGE_FRAGMENT_BIT) {
+                    std::cout << "FRAGMENT";
+                }
+                if (shaderStage & VK_SHADER_STAGE_COMPUTE_BIT) {
+                    std::cout << "COMPUTE";
+                }
+                std::cout << std::endl;
+
+                // Check if this binding already exists
+                auto& bindings = setLayout.bindings;
+                if (bindings.find(bindingIndex) != bindings.end()) {
+                    // Combine shader stages if binding already exists
+                    bindings[bindingIndex].stageFlags |= shaderStage;
+                    std::cout << "  -> Combined shader stages for existing binding" << std::endl;
+                } else {
+                    // Create new binding
+                    VkDescriptorSetLayoutBinding newBinding{};
+                    newBinding.binding = bindingIndex;
+                    newBinding.descriptorCount = 1;
+                    newBinding.descriptorType = static_cast<VkDescriptorType>(binding->descriptor_type);
+                    newBinding.stageFlags = shaderStage;
+                    newBinding.pImmutableSamplers = nullptr;
+
+                    // Check for dynamic buffer
+                    for (const auto& [setIdx, bindingIdx] : dynamicBuffers) {
+                        if (setIdx == setIndex && bindingIdx == bindingIndex) {
+                            if (newBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                                newBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                                std::cout << "  -> Converting to dynamic uniform buffer" << std::endl;
+                            } else if (newBinding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+                                newBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+                                std::cout << "  -> Converting to dynamic storage buffer" << std::endl;
+                            }
+                            break;
+                        }
+                    }
+
+                    bindings[bindingIndex] = newBinding;
+                }
+            }
+        }
+
         spvReflectDestroyShaderModule(&module);
-        throw std::runtime_error("Failed to enumerate descriptor sets");
     }
 
-    std::vector<SpvReflectDescriptorSet*> sets(count);
-    result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        spvReflectDestroyShaderModule(&module);
-        throw std::runtime_error("Failed to enumerate descriptor sets");
+    std::cout << "\nFinal Descriptor Set Layouts:" << std::endl;
+    for (const auto& [setIndex, layoutData] : setLayouts) {
+        for (const auto& [bindingIndex, binding] : layoutData.bindings) {
+            std::cout << "Set: " << setIndex << " Binding: " << bindingIndex << " ShaderStage: ";
+            if (binding.stageFlags & VK_SHADER_STAGE_VERTEX_BIT) {
+                std::cout << "VERTEX ";
+            }
+            if (binding.stageFlags & VK_SHADER_STAGE_FRAGMENT_BIT) {
+                std::cout << "FRAGMENT ";
+            }
+            if (binding.stageFlags & VK_SHADER_STAGE_COMPUTE_BIT) {
+                std::cout << "COMPUTE ";
+            }
+            std::cout << std::endl;
+        }
     }
 
-    std::vector<VkDescriptorSetLayout> layouts(sets.size());
-
+    // Create final descriptor set layouts
+    std::map<uint32_t, VkDescriptorSetLayout> finalLayouts;
     auto descriptorLayoutCache = DescriptorLayoutCache::Instance();
 
-    for (int i = 0; i < sets.size(); i++) {
-        DescriptorLayoutCache::DescriptorLayoutInfo layoutInfo;
-        
-        for (uint32_t b = 0; b < sets[i]->binding_count; b++) {
-            const auto& binding = sets[i]->bindings[b];
-            bool isDynamicBuffer = false;
-            for (std::pair<int, int> dynamicBufferIndexPair : dynamicBuffers) {
-                if (dynamicBufferIndexPair.first == i && dynamicBufferIndexPair.second == binding->binding) {
-                    isDynamicBuffer = true;
-                    break;
-                }
-            }
-            auto bindingType = binding->descriptor_type;
-            if (isDynamicBuffer) {
-                switch (bindingType) {
-                    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER: 
-                        bindingType = SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-                        break;
-                    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                        bindingType = SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-                        break;        
-                    default:
-                        break;
-                }
-            }
-            layoutInfo.add_binding(
-                binding->binding,
-                static_cast<VkDescriptorType>(bindingType)
-            );
-            // Set the stage flags for the last added binding
-            layoutInfo.bindings.back().stageFlags = shaderStage;
-            layoutInfo.bindings.back().descriptorCount = 1;
-            layoutInfo.bindings.back().pImmutableSamplers = nullptr;
+    for (const auto& [setIndex, layoutData] : setLayouts) {
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
+        for (const auto& [_, binding] : layoutData.bindings) {
+            bindings.push_back(binding);
         }
 
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        createInfo.bindingCount = sets[i]->binding_count;
-        createInfo.pBindings = layoutInfo.bindings.data();
+        createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        createInfo.pBindings = bindings.data();
 
-        layouts[i] = descriptorLayoutCache.create_descriptor_layout(&createInfo);
+        finalLayouts[setIndex] = descriptorLayoutCache.create_descriptor_layout(&createInfo);
     }
 
-    spvReflectDestroyShaderModule(&module);
-    return layouts;
+    return finalLayouts;
 }
 
-PipelineConfigInfo PipelineConfigInfo::defaultPipelineConfigInfo(std::string vertShaderPath, const std::string fragShaderPath) {
+PipelineConfigInfo PipelineConfigInfo::defaultPipelineConfigInfo(std::string vertShaderPath, const std::string fragShaderPath, VkVertexInputBindingDescription bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription) {
     PipelineConfigInfo configInfo{};
 
     configInfo.vertShaderPath = vertShaderPath;
     configInfo.fragShaderPath = fragShaderPath;
+
+    //Vertex Info
+    configInfo.bindingDescription = bindingDescription;
+    configInfo.attributeDescriptions = attributeDescription;
 
     // Input Assembly
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -232,15 +287,12 @@ void Pipeline::createPipeline() {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Vertex Input State
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_configInfo.attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &m_configInfo.bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = m_configInfo.attributeDescriptions.data();
 
     auto swapChainExtent = api.getSwapChainExtent();
 
@@ -265,16 +317,24 @@ void Pipeline::createPipeline() {
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
     // Get reflectance info from shaders
-    auto vertLayouts = reflectShaderModule(vertShaderCode, VK_SHADER_STAGE_VERTEX_BIT);
-    auto fragLayouts = reflectShaderModule(fragShaderCode, VK_SHADER_STAGE_FRAGMENT_BIT);
+    std::vector<std::pair<std::vector<char>, VkShaderStageFlags>> shaderData = {
+        {vertShaderCode, VK_SHADER_STAGE_VERTEX_BIT},
+        {fragShaderCode, VK_SHADER_STAGE_FRAGMENT_BIT}
+    };
 
-    // Combine layouts from both shaders
-    std::vector<VkDescriptorSetLayout> allLayouts;
-    allLayouts.insert(allLayouts.end(), vertLayouts.begin(), vertLayouts.end());
-    allLayouts.insert(allLayouts.end(), fragLayouts.begin(), fragLayouts.end());
+    auto layouts = reflectShaderModule(shaderData);
 
-    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(allLayouts.size());
-    pipelineLayoutInfo.pSetLayouts = allLayouts.data();
+    // Convert map to vector for pipeline layout creation
+    std::vector<VkDescriptorSetLayout> layoutsVec;
+    for (const auto& [setIndex, layout] : layouts) {
+        if (layoutsVec.size() <= setIndex) {
+            layoutsVec.resize(setIndex + 1, VK_NULL_HANDLE);
+        }
+        layoutsVec[setIndex] = layout;
+    }
+
+    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layoutsVec.size());
+    pipelineLayoutInfo.pSetLayouts = layoutsVec.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 

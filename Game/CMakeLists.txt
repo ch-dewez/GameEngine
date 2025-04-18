@@ -27,7 +27,7 @@ add_custom_command(
     TARGET GameShaders
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND}
-    -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/Shaders"
+    -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/"
     -DOUTPUT_DIR="${CMAKE_BINARY_DIR}/shaders/Game"
     -DGLSLC_EXECUTABLE="${Vulkan_GLSLC_EXECUTABLE}"
     -P "${CMAKE_SOURCE_DIR}/cmake/CompileShaders.cmake"
