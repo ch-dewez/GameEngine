@@ -4,6 +4,7 @@
 #include <optional>
 #include <utility>
 #include "RessourceManager.h"
+#include "Material.h"
 #include "Pipeline.h"
 
 namespace Engine {
@@ -35,14 +36,14 @@ void RessourceManager::clearAll() {
     m_pipelines.clear();
 }
 
-std::optional<std::shared_ptr<Texture>> RessourceManager::getTexture(std::string key){
+std::optional<std::shared_ptr<Texture>> RessourceManager::getTexture(const std::string& key){
     auto texture = m_textures.find(key);
     if (texture == m_textures.end()) return {};
 
     return texture->second;
 };
 
-std::optional<std::shared_ptr<Material>> RessourceManager::getMaterial(std::string key){
+std::optional<std::shared_ptr<Material>> RessourceManager::getMaterial(const std::string& key){
     auto material = m_materials.find(key);
     if (material == m_materials.end()) 
         return {};
@@ -59,47 +60,87 @@ std::optional<std::shared_ptr<Material>> RessourceManager::getMaterial(std::stri
 /*    return pipeline->second;*/
 /*};*/
 
-std::shared_ptr<Texture> RessourceManager::loadTexture(std::string key, std::shared_ptr<Texture> texture){
+void RessourceManager::loadTexture(const std::string& key, std::shared_ptr<Texture> texture) {
     auto existing = m_textures.find(key);
-    if (existing != m_textures.end()) 
-        return existing->second;
+    if (existing != m_textures.end()) {
+        throw std::runtime_error("Texture with key '" + key + "' already exists");
+    }
+    m_textures.insert(std::pair<std::string, std::shared_ptr<Texture>>(key, texture));
+}
 
+void RessourceManager::loadMaterial(const std::string& key, std::shared_ptr<Material> material) {
+    auto existing = m_materials.find(key);
+    if (existing != m_materials.end()) {
+        throw std::runtime_error("Material with key '" + key + "' already exists");
+    }
+    m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, material));
+}
+
+void RessourceManager::loadMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate) {
+    auto existing = m_materialsTemplate.find(key);
+    if (existing != m_materialsTemplate.end()) {
+        throw std::runtime_error("MaterialTemplate with key '" + key + "' already exists");
+    }
+    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, materialTemplate));
+}
+
+std::shared_ptr<Texture> RessourceManager::loadOrGetTexture(const std::string& key, std::shared_ptr<Texture> texture) {
+    auto existing = m_textures.find(key);
+    if (existing != m_textures.end()) {
+        return existing->second;
+    }
     m_textures.insert(std::pair<std::string, std::shared_ptr<Texture>>(key, texture));
     return texture;
+}
 
-};
-std::shared_ptr<Material> RessourceManager::loadMaterial(std::string key, std::shared_ptr<Material> material){
+std::shared_ptr<Material> RessourceManager::loadOrGetMaterial(const std::string& key, std::shared_ptr<Material> material) {
     auto existing = m_materials.find(key);
-    if (existing != m_materials.end()) 
+    if (existing != m_materials.end()) {
         return existing->second;
-
+    }
     m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, material));
     return material;
-
-};
-
-
-std::shared_ptr<Texture> RessourceManager::createTexture(std::string key, const std::string &imagePath) {}
-
-std::shared_ptr<MaterialTemplate> RessourceManager::createMaterialTemplate(std::string key, size_t materialSize, std::shared_ptr<Pipeline> pipeline) {
-    auto existing = m_materialsTemplate.find(key);
-    if (existing != m_materialsTemplate.end()) 
-        return existing->second;
-
-    std::shared_ptr<MaterialTemplate> matTemplate = std::make_shared<MaterialTemplate>(materialSize, pipeline);
-    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, matTemplate));
-    return matTemplate;
-};
-
-std::shared_ptr<Material> RessourceManager::createMaterial(std::string key, std::shared_ptr<MaterialTemplate> matTemplate) {
-    auto existing = m_materials.find(key);
-    if (existing != m_materials.end()) 
-        return existing->second;
-
-    std::shared_ptr<Material> mat = std::make_shared<Material>(matTemplate);
-    m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, mat));
-    return mat;
 }
+
+std::shared_ptr<MaterialTemplate> RessourceManager::loadOrGetMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate) {
+    auto existing = m_materialsTemplate.find(key);
+    if (existing != m_materialsTemplate.end()) {
+        return existing->second;
+    }
+    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, materialTemplate));
+    return materialTemplate;
+}
+
+
+/*std::shared_ptr<Texture> RessourceManager::createTexture(const std::string& key, const std::string &imagePath) {*/
+/*    auto existing = m_textures.find(key);*/
+/*    if (existing != m_textures.end()) */
+/*        return existing->second;*/
+/**/
+/*    std::shared_ptr<Texture> texture = std::make_shared<Texture>(imagePath);*/
+/*    m_textures.insert(std::pair<std::string, std::shared_ptr<Texture>>(key, texture));*/
+/*    return texture;*/
+/*};*/
+/**/
+/*std::shared_ptr<MaterialTemplate> RessourceManager::createMaterialTemplate(const std::string& key, std::shared_ptr<Pipeline> pipeline) {*/
+/*    auto existing = m_materialsTemplate.find(key);*/
+/*    if (existing != m_materialsTemplate.end()) */
+/*        return existing->second;*/
+/**/
+/*    std::shared_ptr<MaterialTemplate> matTemplate = std::make_shared<MaterialTemplate>(pipeline);*/
+/*    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, matTemplate));*/
+/*    return matTemplate;*/
+/*};*/
+/**/
+/*std::shared_ptr<Material> RessourceManager::createMaterial(const std::string& key, size_t matSize, std::shared_ptr<MaterialTemplate> matTemplate) {*/
+/*    auto existing = m_materials.find(key);*/
+/*    if (existing != m_materials.end()) */
+/*        return existing->second;*/
+/**/
+/*    std::shared_ptr<Material> mat = std::make_shared<Material>(matTemplate, matSize);*/
+/*    m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, mat));*/
+/*    return mat;*/
+/*}*/
 
 
 /*std::shared_ptr<Pipeline> RessourceManager::createPipeline(std::string key, const PipelineConfigInfo &configInfo) {*/

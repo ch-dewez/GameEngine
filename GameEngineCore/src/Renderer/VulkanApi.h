@@ -3,6 +3,12 @@
 #include <GLFW/glfw3.h>
 
 namespace Engine {
+
+namespace Ressources {
+//forward declaration
+class Texture;
+}
+
 namespace Renderer {
 
 struct QueueFamilyIndices {
@@ -91,6 +97,9 @@ public:
         void** ppData);
 
     // Command buffer operations
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
     VkResult allocateCommandBuffers(
         const VkCommandBufferAllocateInfo* pAllocateInfo,
         VkCommandBuffer* pCommandBuffers);
@@ -345,6 +354,26 @@ public:
         VkFormat format,
         VkFormatProperties* pFormatProperties);
 
+    void cmdCopyBufferToImage(
+        VkCommandBuffer commandBuffer,
+        VkBuffer buffer,
+        VkImage image,
+        VkImageLayout imageLayout,
+        uint32_t regionCount,
+        const VkBufferImageCopy* pRegions);
+
+    void getPhysicalDeviceProperties(
+        VkPhysicalDeviceProperties* pProperties);
+
+    VkResult createSampler(
+        const VkSamplerCreateInfo* pCreateInfo,
+        const VkAllocationCallbacks* pAllocator,
+        VkSampler* pSampler);
+
+    void destroySampler(
+        VkSampler sampler,
+        const VkAllocationCallbacks* pAllocator);
+
 private:
 
     void initVulkan();
@@ -372,6 +401,8 @@ private:
 
     void createFrameBuffers();
 
+    void createDepthBuffer();
+
     void createCommandPool();
 private:
     const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -393,6 +424,8 @@ private:
     VkRenderPass m_renderPass;
 
     std::vector<VkFramebuffer> m_swapChainFramebuffers;
+
+    ::Engine::Ressources::Texture* m_depthBuffer;
 
     bool m_framebufferResized = false;
 

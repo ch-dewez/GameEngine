@@ -1,7 +1,7 @@
 #include "VulkanApi.h"
 #include "VulkanConfig.h"
 #include "vulkan/vulkan_core.h"
-#include <iostream>
+#include "Ressources/Texture.h"
 #include <algorithm>
 #include <map>
 #include <set>
@@ -44,6 +44,7 @@ void VulkanApi::initVulkan() {
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createDepthBuffer();
     createRenderPass();
     createFrameBuffers();
     createCommandPool();
@@ -53,7 +54,7 @@ void VulkanApi::shutDownVulkan() {
 
     cleanupSwapChain();
 
-    //delete m_depthBuffer;
+    delete m_depthBuffer;
 
     vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
@@ -103,6 +104,8 @@ int VulkanApi::rateDeviceSuitability(VkPhysicalDevice device) {
     if (! findQueueFamilies(device).isComplete()) return 0; 
 
     if (! checkDeviceExtensionSupport(device)) return 0;
+
+    if (! deviceFeatures.samplerAnisotropy) return 0;
 
     bool swapChainAdequate = false;
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
@@ -158,6 +161,7 @@ void VulkanApi::createLogicalDevice() {
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -411,26 +415,6 @@ void VulkanApi::createImageViews() {
     }
 }
 
-/*void VulkanApi::createDepthResources() {*/
-/*    m_depthFormat = Ressources::ImageBuffer::findDepthFormat();*/
-/**/
-/*    m_depthBuffer = new Ressources::ImageBuffer(*/
-/*        &m_device,*/
-/*        &m_physicalDevice,*/
-/*        m_swapChainExtent.width,*/
-/*        m_swapChainExtent.height,*/
-/*        m_depthFormat,*/
-/*        VK_IMAGE_TILING_OPTIMAL,*/
-/*        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,*/
-/*        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT*/
-/*    );*/
-/**/
-/*    m_depthBuffer->createImageView(*/
-/*        m_depthFormat,*/
-/*        VK_IMAGE_ASPECT_DEPTH_BIT*/
-/*    );*/
-/*}*/
-
 void VulkanApi::createRenderPass() {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = m_swapChainImageFormat;
@@ -442,40 +426,39 @@ void VulkanApi::createRenderPass() {
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    /*VkAttachmentDescription depthAttachment{};*/
-    /*depthAttachment.format = m_depthFormat;*/
-    /*depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;*/
-    /*depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;*/
-    /*depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;*/
-    /*depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;*/
-    /*depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;*/
-    /*depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;*/
-    /*depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;*/
+    VkAttachmentDescription depthAttachment{};
+    depthAttachment.format = m_depthBuffer->getFormat();
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    /*VkAttachmentReference depthAttachmentRef{};*/
-    /*depthAttachmentRef.attachment = 1;*/
-    /*depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;*/
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
-    //subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.srcAccessMask = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    //std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-    std::array<VkAttachmentDescription, 1> attachments = {colorAttachment};
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -494,9 +477,9 @@ void VulkanApi::createFrameBuffers() {
     m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
 
     for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
-        std::array<VkImageView, 1> attachments = {
+        std::array<VkImageView, 2> attachments = {
             m_swapChainImageViews[i],
-            //m_depthBuffer->getImageView()
+            m_depthBuffer->getImageView()
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
@@ -512,6 +495,11 @@ void VulkanApi::createFrameBuffers() {
             throw std::runtime_error("failed to create framebuffer!");
         }
     }
+}
+
+void VulkanApi::createDepthBuffer() {
+    auto info = Ressources::Texture::TextureCreateInfo::getDefaultForDepthBuffer(m_swapChainExtent.width, m_swapChainExtent.height);
+    m_depthBuffer = new Ressources::Texture(info, this);
 }
 
 void VulkanApi::createCommandPool() {
@@ -555,6 +543,39 @@ void VulkanApi::freeMemory(
     const VkAllocationCallbacks* pAllocator) 
 {
     vkFreeMemory(m_device, memory, pAllocator);
+}
+
+VkCommandBuffer VulkanApi::beginSingleTimeCommands() {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void VulkanApi::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphicsQueue);
+
+    vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 }
 
 VkResult VulkanApi::allocateCommandBuffers(
@@ -982,6 +1003,44 @@ void VulkanApi::getPhysicalDeviceFormatProperties(
     VkFormatProperties* pFormatProperties) 
 {
     vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, pFormatProperties);
+}
+
+void VulkanApi::cmdCopyBufferToImage(
+    VkCommandBuffer commandBuffer,
+    VkBuffer buffer,
+    VkImage image,
+    VkImageLayout imageLayout,
+    uint32_t regionCount,
+    const VkBufferImageCopy* pRegions)
+{
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        buffer,
+        image,
+        imageLayout,
+        regionCount,
+        pRegions);
+}
+
+void VulkanApi::getPhysicalDeviceProperties(
+    VkPhysicalDeviceProperties* pProperties) 
+{
+    vkGetPhysicalDeviceProperties(m_physicalDevice, pProperties);
+}
+
+VkResult VulkanApi::createSampler(
+    const VkSamplerCreateInfo* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkSampler* pSampler)
+{
+    return vkCreateSampler(m_device, pCreateInfo, pAllocator, pSampler);
+}
+
+void VulkanApi::destroySampler(
+    VkSampler sampler,
+    const VkAllocationCallbacks* pAllocator)
+{
+    vkDestroySampler(m_device, sampler, pAllocator);
 }
 
 }

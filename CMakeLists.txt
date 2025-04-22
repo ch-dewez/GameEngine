@@ -72,11 +72,16 @@ FetchContent_Declare(
     GIT_TAG 0.9.9.8
 )
 
-# Add SPIRV-Reflect
 FetchContent_Declare(
     SPIRV-Reflect
     GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect.git
-    GIT_TAG main  # Using main instead of the invalid tag
+    GIT_TAG main 
+)
+
+FetchContent_Declare(
+    stb_image
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
 )
 
 # Configure GLFW options
@@ -90,7 +95,7 @@ set(SPIRV_REFLECT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(glfw glm SPIRV-Reflect)
+FetchContent_MakeAvailable(glfw glm SPIRV-Reflect stb_image)
 
 # Add main projects
 add_subdirectory(GameEngineCore)

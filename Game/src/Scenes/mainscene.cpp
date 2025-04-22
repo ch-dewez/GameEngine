@@ -10,16 +10,55 @@
 #include "Ressources/Vertex.h"
 #include "Ressources/vertexBuffer.h"
 #include "Ressources/IndexBuffer.h"
+#include "Ressources/Material.h"
 #include "../Materials/defaultMaterial.h"
 #include <memory>
-#include <iostream>
 #include <vector>
 #include "Scene/Components/DirectionalLight.h"
 #include "Scene/Components/PointLight.h"
+#include "vulkan/vulkan_core.h"
 
 namespace Game {
 
-const std::vector<Material::defaultMaterial::Vertex> vertices = {
+const std::vector<Material::PosNormalTexCoordVertex> verticesTexCoord = {
+    // Front face (normal: 0, 0, 1)
+    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},   // 0
+    {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1
+    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},   // 2
+    {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3
+
+    // Back face (normal: 0, 0, -1)
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},  // 4
+    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},  // 5
+    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},  // 6
+    {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},  // 7
+
+    // Left face (normal: -1, 0, 0)
+    {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // 8
+    {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},  // 9
+    {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},  // 10
+    {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},  // 11
+
+    // Right face (normal: 1, 0, 0)
+    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},   // 12
+    {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},   // 13
+    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},   // 14
+    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},   // 15
+
+    // Top face (normal: 0, 1, 0)
+    {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},   // 16
+    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // 17
+    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},   // 18
+    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},   // 19
+
+    // Bottom face (normal: 0, -1, 0)
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},  // 20
+    {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},  // 21
+    {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},  // 22
+    {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}}   // 23
+};
+
+const std::vector<Material::PosNormalVertex> verticesColor = {
     // Front face (normal: 0, 0, 1)
     {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 0
     {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 1
@@ -125,37 +164,49 @@ void MainScene::initialize(){
     std::weak_ptr<Engine::Entity> entityWeak (entity);
 
 
-    auto config = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVert.glsl.spv", "shaders/GameEngineCore/blinnPhongFrag.glsl.spv", Material::defaultMaterial::Vertex::getBindingDescription(), Material::defaultMaterial::Vertex::getAttributeDescriptions());
-    //auto config = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("build/shaders/GameEngineCore/blinnPhongVert.glsl.spv", "build/shaders/GameEngineCore/blinnPhongFrag.glsl.spv");
-    auto pipeline = std::make_unique<Engine::Ressources::Pipeline>(config);
-    auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)vertices.data(), (size_t)vertices.size() * sizeof(vertices[0]));
-    auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
+    auto blinnPhongColorPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertColor.glsl.spv", "shaders/GameEngineCore/blinnPhongFragColor.glsl.spv", Material::PosNormalVertex::getBindingDescription(), Material::PosNormalVertex::getAttributeDescriptions());
+    auto blinnPhongTexPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertText.glsl.spv", "shaders/GameEngineCore/blinnPhongFragText.glsl.spv", Material::PosNormalTexCoordVertex::getBindingDescription(), Material::PosNormalTexCoordVertex::getAttributeDescriptions());
+    auto blinnPhongColorPipeline = std::make_unique<Engine::Ressources::Pipeline>(blinnPhongColorPipelineConfig);
+    auto blinnPhongTexPipeline = std::make_unique<Engine::Ressources::Pipeline>(blinnPhongTexPipelineConfig);
 
     auto& ressourceManager = Engine::Ressources::RessourceManager::getInstance();
 
-    auto matTemplate = ressourceManager.createMaterialTemplate("default Mat template", sizeof(Material::defaultMaterial), std::move(pipeline));
 
-    auto mat = ressourceManager.createMaterial("default mat", matTemplate);
-    auto defaultMat = Material::defaultMaterial();
+    auto blinnPhongColorTemplate = std::make_shared<Engine::Ressources::MaterialTemplate>(std::move(blinnPhongColorPipeline));
+    auto blinnPhongTexTemplate = std::make_shared<Engine::Ressources::MaterialTemplate>(std::move(blinnPhongTexPipeline));
+    ressourceManager.loadMaterialTemplate("blinnPhongColor", blinnPhongColorTemplate);
+    ressourceManager.loadMaterialTemplate("blinnPhongTexture", blinnPhongTexTemplate);
+
+    auto mat = std::make_shared<Engine::Ressources::Material>(blinnPhongColorTemplate, sizeof(Material::blinnPhongColor));
+    ressourceManager.loadMaterial("mat", mat);
+    auto defaultMat = Material::blinnPhongColor();
     defaultMat.diffuse = glm::vec3(2.0, 8.0, 1.0);
     defaultMat.shininess = 1.0;
     mat->updateData(&defaultMat);
 
 
-    auto mat2 = ressourceManager.createMaterial("default mat2", matTemplate);
-    auto defaultMat2 = Material::defaultMaterial();
-    defaultMat2.diffuse = glm::vec3(8.0, 1.0, 0.2);
+    auto mat2 = std::make_shared<Engine::Ressources::Material>(blinnPhongColorTemplate, sizeof(Material::blinnPhongColor));
+    ressourceManager.loadMaterial("mat 2", mat2);
+    auto defaultMat2 = Material::blinnPhongColor();
+    defaultMat2.diffuse = glm::vec3(1.0, 1.0, 1.0);
     defaultMat2.shininess = 1.0;
     mat2->updateData(&defaultMat2);
-    
-    auto mat3 = ressourceManager.createMaterial("default mat3", matTemplate);
-    auto defaultMat3 = Material::defaultMaterial();
-    defaultMat3.diffuse = glm::vec3(1.0, 1.0, 1.0);
-    defaultMat3.shininess = 1.0;
-    mat3->updateData(&defaultMat3);
 
 
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(entityWeak, mat, std::move(vertexBuffer), std::move(indexBuffer)));
+    auto woodTextureInfo = Engine::Ressources::Texture::TextureCreateInfo::getDefault("Assets/Game/wood.jpg");
+    auto woodTexture = std::make_shared<Engine::Ressources::Texture>(woodTextureInfo);
+    ressourceManager.loadTexture("wood", woodTexture);
+    std::vector<VkDescriptorImageInfo> imageInfo = {woodTexture->createDescriptorImageInfo()};
+    auto mat3 = std::make_shared<Engine::Ressources::Material>(blinnPhongTexTemplate, sizeof(Material::blinnPhongText), &imageInfo);
+    ressourceManager.loadMaterial("mat 3", mat3);
+    auto matStruct3 = Material::blinnPhongText();
+    matStruct3.shininess = 1.0;
+    mat3->updateData(&matStruct3);
+
+
+    auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
+    auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
+    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(entityWeak, mat3, std::move(vertexBuffer), std::move(indexBuffer)));
 
     std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform(entityWeak));
 
@@ -173,9 +224,9 @@ void MainScene::initialize(){
     
     std::shared_ptr<Engine::Entity> entity2 (new Engine::Entity("second entity"));
     std::weak_ptr<Engine::Entity> entityWeak2 (entity2);
-    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)vertices.data(), (size_t)vertices.size() * sizeof(vertices[0]));
+    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
     indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer2 (new Engine::Components::MeshRenderer(entityWeak2, mat2, std::move(vertexBuffer), std::move(indexBuffer)));
+    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer2 (new Engine::Components::MeshRenderer(entityWeak2, mat, std::move(vertexBuffer), std::move(indexBuffer)));
     std::shared_ptr<Engine::Components::Transform> transform2 (new Engine::Components::Transform(entityWeak2));
     std::shared_ptr<Components::BoxMovement> boxMOvement2 (new Components::BoxMovement(entityWeak2));
     entity->addComponent(boxMOvement2);
@@ -186,9 +237,9 @@ void MainScene::initialize(){
     transform2->position.z -= 2.0;
     
     std::shared_ptr<Engine::Entity> plane (new Engine::Entity("plane"));
-    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)vertices.data(), (size_t)vertices.size() * sizeof(vertices[0]));
+    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
     indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer3 (new Engine::Components::MeshRenderer(plane, mat3, std::move(vertexBuffer), std::move(indexBuffer)));
+    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer3 (new Engine::Components::MeshRenderer(plane, mat2, std::move(vertexBuffer), std::move(indexBuffer)));
     std::shared_ptr<Engine::Components::Transform> transform3 (new Engine::Components::Transform(plane));
     plane->addComponent(meshRenderer3);
     plane->addComponent(transform3);
@@ -205,7 +256,7 @@ void MainScene::initialize(){
     std::weak_ptr<Engine::Entity> cameraWeak (camera);
 
     std::shared_ptr<Components::CameraMovement> component (new Components::CameraMovement(cameraWeak));
-    //camera->addComponent(component);
+    camera->addComponent(component);
     
     std::shared_ptr<Engine::Entity> light (new Engine::Entity("Light"));
     std::weak_ptr<Engine::Entity> lightWeak (light);

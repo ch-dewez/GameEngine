@@ -16,7 +16,6 @@
 namespace Engine {
 namespace Ressources{
 
-// TODO: singleton
 class DescriptorLayoutCache {
 public:
     static void Init();
@@ -78,7 +77,6 @@ private:
     uint32_t setsPerPool;
 };
 
-//TODO: Singleton
 class DescriptorBuilder {
 public:
     static void Init();

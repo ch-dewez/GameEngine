@@ -25,17 +25,20 @@ layout(set = 0, binding = 1) uniform lightBufferObject {
 } lights;
 
 layout(set = 2, binding = 0) uniform Material {
-    vec3 diffuse;
     float shininess;
 } material;
 
+layout(set = 2, binding = 1) uniform sampler2D texSampler;
+
 layout(location = 0) in vec4 inVertPos;
 layout(location = 1) in vec4 inNormal;
+layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
     vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 diffuse = texture(texSampler, inTexCoord);
     for (uint i = 0; i < lights.nbPointLights; i++) {
         PointLight light = lights.pointLights[i];
         vec4 lightDir = normalize(light.pos - inVertPos);
@@ -53,7 +56,7 @@ void main() {
         float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * distance +
                     light.quadraticAttenuation * (distance * distance));
 
-        result += (lambertian * light.color * vec4(material.diffuse, 1.0) * specular) * attenuation;
+        result += (lambertian * light.color * diffuse * specular) * attenuation;
     }
     for (uint i = 0; i < lights.nbDirectionalLights; i++) {
         DirectionalLight light = lights.directionalLights[i];
@@ -67,7 +70,7 @@ void main() {
             specular = pow(specAngle, material.shininess);
         }
 
-        result += lambertian * light.color * vec4(material.diffuse, 1.0) * specular;
+        result += lambertian * light.color * diffuse * specular;
     }
     outColor = result;
 }

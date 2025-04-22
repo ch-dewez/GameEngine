@@ -19,7 +19,6 @@ void DescriptorBuilder::DestroyAll(){
 
 DescriptorBuilder& DescriptorBuilder::bind_buffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorType type, VkShaderStageFlags stageFlags)
 {
-    //create the descriptor binding for the layout
     VkDescriptorSetLayoutBinding newBinding{};
 
     newBinding.descriptorCount = 1;
@@ -38,6 +37,31 @@ DescriptorBuilder& DescriptorBuilder::bind_buffer(uint32_t binding, VkDescriptor
     newWrite.descriptorCount = 1;
     newWrite.descriptorType = type;
     newWrite.pBufferInfo = bufferInfo;
+    newWrite.dstBinding = binding;
+
+    writes.push_back(newWrite);
+    return *this;
+}
+
+DescriptorBuilder& DescriptorBuilder::bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags) {
+    VkDescriptorSetLayoutBinding newBinding{};
+
+    newBinding.descriptorCount = 1;
+    newBinding.descriptorType = type;
+    newBinding.pImmutableSamplers = nullptr;
+    newBinding.stageFlags = stageFlags;
+    newBinding.binding = binding;
+
+    bindings.push_back(newBinding);
+
+    //create the descriptor write
+    VkWriteDescriptorSet newWrite{};
+    newWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    newWrite.pNext = nullptr;
+
+    newWrite.descriptorCount = 1;
+    newWrite.descriptorType = type;
+    newWrite.pImageInfo = imageInfo;
     newWrite.dstBinding = binding;
 
     writes.push_back(newWrite);

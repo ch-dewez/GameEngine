@@ -13,7 +13,7 @@
 namespace Engine {
 namespace Ressources {
 
-static std::pair<int, int> dynamicBuffers[] = {std::pair(1, 0), std::pair(2, 0)}; // set , binding
+static std::pair<int, int> dynamicBuffers[] = {std::pair(1, 0)}; // set , binding
 
 struct DescriptorSetLayoutData {
     std::map<uint32_t, VkDescriptorSetLayoutBinding> bindings;

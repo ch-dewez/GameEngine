@@ -15,29 +15,19 @@ class MaterialTemplate {
 // don't want non mat allocating things here
 friend Material;
 public:
-    MaterialTemplate(size_t matSize, std::shared_ptr<Pipeline> pipeline);
+    MaterialTemplate(std::shared_ptr<Pipeline> pipeline);
     /*MaterialTemplate(size_t bufferSize, std::string& pipelineKey);*/
 
     std::weak_ptr<Pipeline> getPipeline() {return m_pipeline;};
+    void bindPipeline(Renderer::Renderer::FrameInfo frameInfo);
 private:
-    int allocateMaterialIndex();
-    void updateData(void* data, int index);
-    void deallocateMaterialIndex(int index);
-    void bindDescriptorSet(Renderer::Renderer::FrameInfo frameInfo, int index);
-private:
-    static constexpr uint32_t MAX_MATERIALS = 100;  // Add a reasonable limit
-    uint32_t m_nextMaterialIndex = 0;
-    std::vector<uint32_t> m_freeIndices;  // Store available indices for reuse
-    uint32_t m_sizeOfMaterial;
     std::shared_ptr<Pipeline> m_pipeline;
-    VkDescriptorSetLayout m_matSetLayout;
-    std::vector<VkDescriptorSet> m_matDescriptorSet;
-    std::unique_ptr<UniformBuffer> m_matUniformBuffer;
 };
 
 class Material {
 public:
-    Material(std::shared_ptr<MaterialTemplate> matTemplate);
+    Material(std::shared_ptr<MaterialTemplate> matTemplate, size_t matSize);
+    Material(std::shared_ptr<MaterialTemplate> matTemplate, size_t matSize, std::vector<VkDescriptorImageInfo>* texturesInfo);
     ~Material();
 
     void updateData(void* data);
@@ -45,7 +35,10 @@ public:
     std::weak_ptr<MaterialTemplate> getMaterialTemplate() {return m_matTemplate;};
 private:
     std::shared_ptr<MaterialTemplate> m_matTemplate;
-    int m_matIndex;
+    uint32_t m_sizeOfMaterial;
+    VkDescriptorSetLayout m_matSetLayout;
+    std::vector<VkDescriptorSet> m_matDescriptorSet;
+    std::unique_ptr<UniformBuffer> m_matUniformBuffer;
 };
 
 }

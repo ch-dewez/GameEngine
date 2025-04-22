@@ -58,20 +58,7 @@ void Buffer::createBaseBuffer(
 
 void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = api.getCommandPool();
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    api.allocateCommandBuffers(&allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    api.beginCommandBuffer(commandBuffer, &beginInfo);
+    VkCommandBuffer commandBuffer = api.beginSingleTimeCommands();
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = srcOffset;
@@ -79,21 +66,16 @@ void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize siz
     copyRegion.size = size;
     api.cmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    api.endCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    api.queueSubmit(1, &submitInfo, VK_NULL_HANDLE);
-    api.queueWaitIdle();
-
-    api.freeCommandBuffers(1, &commandBuffer);
+    api.endSingleTimeCommands(commandBuffer);
 }
 
-uint32_t Buffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+
+uint32_t Buffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)  {
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
+    return findMemoryType(typeFilter, properties, api);
+}
+
+uint32_t Buffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, Renderer::VulkanApi& api) {
     VkPhysicalDeviceMemoryProperties memProperties;
     api.getPhysicalDeviceMemoryProperties(&memProperties);
 
@@ -105,6 +87,45 @@ uint32_t Buffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prope
     }
 
     throw std::runtime_error("failed to find suitable memory type!");
+}
+
+void Buffer::mapMemory(VkDeviceSize size, VkMemoryMapFlags flags, void** ppData, uint32_t index) {
+    Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
+    api.mapMemory(m_buffersMemory[index], 0, size, flags, ppData);
+}
+void Buffer::unmapMemory(uint32_t index) {
+    Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
+    api.unmapMemory(m_buffersMemory[index]);
+}
+
+void Buffer::updateData(void* data, size_t size, uint32_t bufferIndex, uint32_t offset) {
+    Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    // Create staging buffer
+    createBaseBuffer(
+        size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        0  // Use temporary index
+    );
+
+    stagingBuffer = m_buffers[0];
+    stagingBufferMemory = m_buffersMemory[0];
+
+    // Map memory and copy data
+    void* mappedMemory;
+    api.mapMemory(stagingBufferMemory, 0, size, 0, &mappedMemory);
+    memcpy(mappedMemory, data, size);
+    api.unmapMemory(stagingBufferMemory);
+
+    // Copy from staging buffer to device local buffer
+    copyBuffer(stagingBuffer, m_buffers[bufferIndex], size, 0, offset);
+
+    // Cleanup staging buffer
+    api.destroyBuffer(stagingBuffer, nullptr);
+    api.freeMemory(stagingBufferMemory, nullptr);
 }
 
 }

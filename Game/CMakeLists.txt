@@ -34,6 +34,17 @@ add_custom_command(
     COMMENT "Compiling Game shaders"
 )
 
+# Copy assets to build directory
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/assets/Game")
+
+add_custom_command(
+    TARGET Game POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets"
+    "${CMAKE_BINARY_DIR}/assets/Game"
+    COMMENT "Copying Game assets to build directory"
+)
+
 # Set compile definitions based on configuration
 target_compile_definitions(Game
     PRIVATE
