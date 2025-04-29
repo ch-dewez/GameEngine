@@ -8,13 +8,14 @@ Entity::Entity(std::string name) {
     uuid.generate_uuid_v4();
 }
 
-void Entity::updateComponents() {
+void Entity::updateComponents(float dt) {
     for (auto component : m_components) {
-        component->update();
+        component->update(dt);
     }
 }
 
 void Entity::addComponent(std::shared_ptr<Components::Component> component){
+    component->setEntity(this);
     m_components.push_back(component);
 }
 

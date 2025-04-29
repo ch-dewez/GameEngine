@@ -46,7 +46,7 @@ DefaultRenderer::DefaultRenderer()
         descriptorBuilder
             .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
             .bind_buffer(1, &lightsBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
-        m_globalDescriptorSets[i] = descriptorBuilder.build(globalDescriptorLayout);
+        m_globalDescriptorSets[i] = descriptorBuilder.build(&globalDescriptorLayout);
 
         // Set up model descriptor sets with dynamic uniform buffer
         VkDescriptorBufferInfo modelBufferInfo{};
@@ -57,7 +57,7 @@ DefaultRenderer::DefaultRenderer()
         descriptorBuilder = Engine::Ressources::DescriptorBuilder();
         descriptorBuilder
             .bind_buffer(0, &modelBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
-        m_modelDescriptorSets[i] = descriptorBuilder.build(modelDescriptorLayout);
+        m_modelDescriptorSets[i] = descriptorBuilder.build(&modelDescriptorLayout);
     }
 }
 
@@ -98,7 +98,7 @@ void DefaultRenderer::render(Engine::Scene& scene) {
 
     GlobalUniformBufferObject ubo{};
     {
-        std::shared_ptr<Engine::Components::Camera> camera = scene.getEntityByTag("Main Camera")->lock()->getComponent<Engine::Components::Camera>();
+        std::shared_ptr<Engine::Components::Camera> camera = scene.getEntityByTag("Main Camera").value().lock()->getComponent<Engine::Components::Camera>().value().lock();
         ubo.view = camera->getViewMatrix();
         auto swapChainExtent = VulkanApi::Instance().getSwapChainExtent();
         ubo.proj = camera->getProjectionMatrix(swapChainExtent.width / (float)swapChainExtent.height);
@@ -111,8 +111,8 @@ void DefaultRenderer::render(Engine::Scene& scene) {
     // since all pipelines should share the same global descriptor set layout
     VkPipelineLayout* pipelineLayout = nullptr;
     for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
-        auto component = entity->getComponent<Engine::Components::Renderer>();
-        pipelineLayout = &component->getMaterial().lock()->getMaterialTemplate().lock()->getPipeline().lock()->getPipelineLayout();
+        auto component = entity->getComponent<Engine::Components::Renderer>().value().lock();
+        pipelineLayout = &component->getMaterial().lock()->getMaterialTemplate()->getPipeline()->getPipelineLayout();
         break;
     }
 
@@ -125,13 +125,13 @@ void DefaultRenderer::render(Engine::Scene& scene) {
         auto pointLights = entity->getComponents<Engine::Components::PointLight>();
 
         for (auto pointLight : pointLights) {
-            lightEnvironment.pointLights[pointLightIndex] = pointLight->lightInfo;
+            lightEnvironment.pointLights[pointLightIndex] = pointLight.lock()->lightInfo;
             pointLightIndex ++;
         }
 
         auto directionalLights = entity->getComponents<Engine::Components::DirectionalLight>();
         for (auto directionalLight : directionalLights) {
-            lightEnvironment.directionalLights[directionalLightIndex] = directionalLight->lightInfo;
+            lightEnvironment.directionalLights[directionalLightIndex] = directionalLight.lock()->lightInfo;
             directionalLightIndex ++;
         }
     }
@@ -167,19 +167,21 @@ void DefaultRenderer::render(Engine::Scene& scene) {
     m_frameInfo.modelsBuffer = m_modelUniformBuffer.get();
 
     // Group renderers by material template
-    std::map<std::shared_ptr<Engine::Ressources::MaterialTemplate>, std::vector<std::shared_ptr<Engine::Components::Renderer>>> renderGroups;
+    std::map<Engine::Ressources::MaterialTemplate*, std::vector<std::shared_ptr<Engine::Components::Renderer>>> renderGroups;
     
     for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
         auto components = entity->getComponents<Engine::Components::Renderer>();
-        for (auto component : components) {
+        for (auto componentWeak : components) {
+            auto component = componentWeak.lock();
             auto material = component->getMaterial().lock();
-            auto materialTemplate = material->getMaterialTemplate().lock();
+            auto materialTemplate = material->getMaterialTemplate();
             renderGroups[materialTemplate].push_back(component);
         }
     }
     
     // Render each group
     for (const auto& group : renderGroups) {
+        group.first->bindPipeline(m_frameInfo);
         for (const auto& component : group.second) {
             component->render(m_frameInfo);
         }

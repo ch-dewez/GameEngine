@@ -11,9 +11,9 @@
 //};
 
 namespace Engine {
-void Scene::updateComponents() {
+void Scene::updateComponents(float dt) {
     for (auto entity : m_entities) {
-        entity->updateComponents();
+        entity->updateComponents(dt);
     }
 }
 

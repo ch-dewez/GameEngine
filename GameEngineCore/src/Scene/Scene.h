@@ -16,8 +16,7 @@ public:
     Scene() = default;
     virtual ~Scene() = default;
 
-    void updateComponents();
-    void render();
+    void updateComponents(float dt);
 
     void addEntity(std::shared_ptr<Entity> entity);
     void removeEntity(UUID id);

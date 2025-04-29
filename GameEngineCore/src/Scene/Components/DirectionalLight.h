@@ -7,7 +7,7 @@ namespace Components {
 
 class DirectionalLight: public Component {
 public:
-    DirectionalLight(std::weak_ptr<Entity> entity);
+    DirectionalLight();
     ::Engine::Renderer::DirectionalLight lightInfo;
 };
 

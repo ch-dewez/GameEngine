@@ -10,20 +10,12 @@
 namespace Game {
 namespace Components {
 
-CameraMovement::CameraMovement(std::weak_ptr<Engine::Entity> entity)
-: Component(entity), startTime(std::chrono::high_resolution_clock::now()) {
+CameraMovement::CameraMovement()
+: Component(), startTime(std::chrono::high_resolution_clock::now()) {
 }
 
-void CameraMovement::update() {
-    if (m_entity.expired()) {
-        return;
-    }
-    
-    auto entity = m_entity.lock();
-    auto transform = entity->getComponent<Engine::Components::Transform>();
-    if (!transform) {
-        return;
-    }
+void CameraMovement::update(float dt) {
+    auto transform = m_entity->getComponent<Engine::Components::Transform>().value().lock();
 
     Engine::Input& input = Engine::Input::Instance();
     

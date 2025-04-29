@@ -44,12 +44,22 @@ Texture::TextureCreateInfo Texture::TextureCreateInfo::getDefaultForDepthBuffer(
     return std::move(info);
 }
 
-
-Texture::Texture(TextureCreateInfo& info){
+void Texture::initMemberFromInfo(TextureCreateInfo& info) {
+    m_format = findSupportedFormat(info.possibleFormats, info.tiling, 0);
+    m_width = info.width;
+    m_height = info.height;
     m_format = findSupportedFormat(info.possibleFormats, info.tiling, 0);
     m_tiling = info.tiling;
     m_usage = info.usage;
     m_properties = info.memoryProperties;
+    m_aspectFlags = info.aspectFlags;
+    m_tiling = info.tiling;
+    m_usage = info.usage;
+    m_properties = info.memoryProperties;
+}
+
+Texture::Texture(TextureCreateInfo& info){
+    initMemberFromInfo(info);
     
     if (info.path != "") {
         loadImage(info.path);
@@ -63,14 +73,8 @@ Texture::Texture(TextureCreateInfo& info){
 Texture::Texture(TextureCreateInfo& info, ::Engine::Renderer::VulkanApi* api)
 {
     m_api = api;
-    m_width = info.width;
-    m_height = info.height;
-    m_format = findSupportedFormat(info.possibleFormats, info.tiling, 0);
-    m_tiling = info.tiling;
-    m_usage = info.usage;
-    m_properties = info.memoryProperties;
-    m_aspectFlags = info.aspectFlags;
 
+    initMemberFromInfo(info);
     if (info.path != "") {
         loadImage(info.path);
     }else {

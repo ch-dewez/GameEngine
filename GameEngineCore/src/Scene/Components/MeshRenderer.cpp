@@ -11,8 +11,8 @@
 namespace Engine {
 namespace Components {
 
-MeshRenderer::MeshRenderer(std::weak_ptr<Engine::Entity> entity, std::shared_ptr<Ressources::Material> material, std::unique_ptr<Ressources::VertexBuffer> vertexBuffer, std::unique_ptr<Ressources::IndexBuffer> indexBuffer)
-: Renderer(entity, material), m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer))
+MeshRenderer::MeshRenderer(std::shared_ptr<Ressources::Material> material, std::unique_ptr<Ressources::VertexBuffer> vertexBuffer, std::unique_ptr<Ressources::IndexBuffer> indexBuffer)
+: Renderer(material), m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer))
 {
 }
 
@@ -22,17 +22,14 @@ void MeshRenderer::render(Engine::Renderer::Renderer::FrameInfo& frameInfo) {
     auto& api = ::Engine::Renderer::VulkanApi::Instance();
 
     // Update and bind the model matrix
-    glm::mat4 model = m_entity.lock()->getComponent<Transform>()->getModelMatrix();
-    //©std::cout << "offser" << std::endl;
-    //std::cout << m_modelBufferIndex << std::endl;
+    glm::mat4 model = m_entity->getComponent<Transform>().value().lock()->getModelMatrix();
     uint32_t offset = m_modelBufferIndex * sizeof(glm::mat4);
-    //std::cout << offset << std::endl;
     frameInfo.modelsBuffer->updateData(&model, sizeof(glm::mat4), frameInfo.frameIndex, offset);
 
     // Bind the model descriptor set
-    api.cmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_material->getMaterialTemplate().lock()->getPipeline().lock()->getPipelineLayout(), 1, 1, &frameInfo.modelsSet, 1, &offset);
+    api.cmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_material->getMaterialTemplate()->getPipeline()->getPipelineLayout(), 1, 1, &frameInfo.modelsSet, 1, &offset);
 
-    m_material->bind(frameInfo);
+    m_material->bindDescriptorSet(frameInfo);
 
     // Bind vertex and index buffers
     VkBuffer vertexBuffers[] = {m_vertexBuffer->getBuffer()};

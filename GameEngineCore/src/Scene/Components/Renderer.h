@@ -13,10 +13,10 @@ public:
     static void SetModelBufferAllocator(std::function<uint32_t()> allocator);
     static void SetModelBufferDeallocator(std::function<void(uint32_t)> deallocator);
     
-    Renderer(std::weak_ptr<Engine::Entity> entity, std::shared_ptr<Ressources::Material> material); 
+    Renderer(std::shared_ptr<Ressources::Material> material); 
     virtual ~Renderer();  // Changed from =default to explicit declaration
 
-    void update() override {};
+    void update(float dt) override {};
     void start() override {};
 
     virtual void render(Engine::Renderer::Renderer::FrameInfo& frameInfo) = 0;

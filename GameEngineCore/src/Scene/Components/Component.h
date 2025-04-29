@@ -1,23 +1,23 @@
 #pragma once
 #include "Scene/Scene.h"
-#include <memory>
+#include "../Entities/Entity.h"
 
 namespace Engine {
 namespace Components {
 
 class Component {
 public:
-    Component(std::weak_ptr<Entity> parentEntity);
-
-    virtual void update();
+    virtual void update(float dt);
     virtual void start();
     //virtual void onEvent();
     
-    
+    void setEntity(Entity* entity);
+    void setScene(Scene* scene);
 public:
     
 protected:
-    std::weak_ptr<Entity> m_entity;
+   Entity* m_entity; // this one can be a pointer and not a weak_ptr because if the entity doesn't exist nor does the component
+    Scene* m_scene;
 };
 
 } // namespace Components

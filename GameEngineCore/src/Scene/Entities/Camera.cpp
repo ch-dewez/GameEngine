@@ -8,8 +8,8 @@
 namespace Engine {
 namespace Entities {
 
-void Camera::load(std::shared_ptr<Entity> self) {
-    std::shared_ptr<Components::Transform> transform = std::make_shared<Components::Transform>(std::weak_ptr<Entity>(self));
+void Camera::load() {
+    std::shared_ptr<Components::Transform> transform = std::make_shared<Components::Transform>();
     
     // Set initial camera position and orientation
     transform->position = glm::vec3(0.0f, 0.0f, 3.0f);  // Move camera back 3 units
@@ -22,10 +22,10 @@ void Camera::load(std::shared_ptr<Entity> self) {
     std::cout << transform->getForwardVector().z << std::endl;
     std::cout << transform->getForwardVector().x << std::endl;
 
-    std::shared_ptr<Components::Camera> cameraComponent = std::make_shared<Components::Camera>(std::weak_ptr<Entity>(self));
+    std::shared_ptr<Components::Camera> cameraComponent = std::make_shared<Components::Camera>();
     addComponent(cameraComponent);
 
-    self->tags.push_back("Main Camera");
+    tags.push_back("Main Camera");
 }
 
 }

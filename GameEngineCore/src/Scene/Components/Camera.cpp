@@ -9,15 +9,7 @@ namespace Engine {
 namespace Components {
 
 glm::mat4 Camera::getViewMatrix(glm::vec3 up) {
-    if(m_entity.expired()) {
-        throw std::runtime_error("can't get entity from weak ptr");
-    }
-    
-    auto entity = m_entity.lock();
-    auto transform = entity->getComponent<Transform>();
-    if (!transform) {
-        throw std::runtime_error("Camera entity missing Transform component");
-    }
+    auto transform = m_entity->getComponent<Transform>().value().lock();
 
     // Calculate camera position and target
     glm::vec3 position = transform->position;
@@ -31,10 +23,6 @@ glm::mat4 Camera::getViewMatrix(glm::vec3 up) {
 }
 
 glm::mat4 Camera::getProjectionMatrix(float aspectRatio) {
-    if(m_entity.expired()) {
-        throw std::runtime_error("can't get entity from weak ptr");
-    }
-
     glm::mat4 proj = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
     proj[1][1] *= -1;
 

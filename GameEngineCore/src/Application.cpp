@@ -5,6 +5,8 @@
 #include "Ressources/DescriptorsManager.h"
 #include "Scene/Components/Renderer.h"
 #include "Input.h"
+#include <iostream>
+#include "Collisions/Collisions.h"
 
 Application::Application(char* title, uint32_t width, uint32_t height, Engine::Scene* defaultScene)
 : m_window(title, width, height)
@@ -39,8 +41,8 @@ Application::Application(char* title, uint32_t width, uint32_t height, Engine::S
 Application::~Application()
 {
     delete m_scene;
-    Engine::Ressources::RessourceManager::Shutdown();
     Engine::Ressources::DescriptorBuilder::DestroyAll();
+    Engine::Ressources::RessourceManager::Shutdown();
     delete m_renderer;
     Engine::Renderer::VulkanApi::Shutdown();
 }
@@ -48,9 +50,18 @@ Application::~Application()
 
 void Application::Run()
 {
+    float lastTime = 0.0f;
     while (m_running && !m_window.shouldClose())
     {
-        m_scene->updateComponents();
+        float currentTime = glfwGetTime();
+        float dt = currentTime - lastTime;
+        lastTime = currentTime;
+
+        std::cout << 1/dt << std::endl;
+
+        m_scene->updateComponents(dt);
+
+        Engine::Collisions::ManageCollision(*m_scene);
 
         m_renderer->render(*m_scene);
 

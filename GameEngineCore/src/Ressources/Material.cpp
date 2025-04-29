@@ -12,14 +12,10 @@
 namespace Engine {
 namespace Ressources {
 
-MaterialTemplate::MaterialTemplate(std::shared_ptr<Pipeline> pipeline)
-: m_pipeline(pipeline)
+MaterialTemplate::MaterialTemplate(std::unique_ptr<Pipeline> pipeline)
 {
+    m_pipeline = std::move(pipeline);
 };
-
-/*MaterialTemplate::MaterialTemplate(size_t bufferSize, std::string& pipelineKey) {*/
-/**/
-/*}*/
 
 void MaterialTemplate::bindPipeline(Renderer::Renderer::FrameInfo frameInfo){
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
@@ -29,11 +25,6 @@ void MaterialTemplate::bindPipeline(Renderer::Renderer::FrameInfo frameInfo){
 Material::Material(std::shared_ptr<MaterialTemplate> matTemplate, size_t matSize)
 : Material(matTemplate, matSize, nullptr)
 {
-}
-
-Material::~Material() {
-    //auto& api = Renderer::VulkanApi::Instance();
-    //api.destroyDescriptorSetLayout(m_matSetLayout, nullptr);
 }
 
 Material::Material(std::shared_ptr<MaterialTemplate> matTemplate, size_t matSize, std::vector<VkDescriptorImageInfo>* texturesInfo)
@@ -59,7 +50,7 @@ Material::Material(std::shared_ptr<MaterialTemplate> matTemplate, size_t matSize
                 binding ++;
             }
         }
-        m_matDescriptorSet[i] = descriptorBuilder.build(m_matSetLayout);
+        m_matDescriptorSet[i] = descriptorBuilder.build();
     }
 
 };
@@ -68,10 +59,15 @@ void Material::updateData(void* data) {
     m_matUniformBuffer->updateData(data, m_sizeOfMaterial);
 }
 
+void Material::bindDescriptorSet(Renderer::Renderer::FrameInfo frameInfo) {
+    Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
+    api.cmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_matTemplate->getPipeline()->getPipelineLayout(), 2, 1, &m_matDescriptorSet[0], 0, nullptr);
+}
+
 void Material::bind(Renderer::Renderer::FrameInfo frameInfo) {
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
     m_matTemplate->bindPipeline(frameInfo);
-    api.cmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_matTemplate->getPipeline().lock()->getPipelineLayout(), 2, 1, &m_matDescriptorSet[0], 0, nullptr);
+    api.cmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_matTemplate->getPipeline()->getPipelineLayout(), 2, 1, &m_matDescriptorSet[0], 0, nullptr);
 }
 
 }

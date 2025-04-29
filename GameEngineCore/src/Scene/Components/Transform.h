@@ -1,3 +1,4 @@
+#pragma once
 #include "Component.h"
 #include "glm/glm.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -8,7 +9,7 @@ namespace Components {
 
 class Transform : public Component {
 public:
-    Transform(std::weak_ptr<Entity> parentEntity);
+    Transform();
 
     //void update() override;
     glm::mat4 getModelMatrix();

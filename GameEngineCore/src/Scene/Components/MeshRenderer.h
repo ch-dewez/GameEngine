@@ -10,7 +10,7 @@ namespace Components {
 class MeshRenderer: public Renderer {
 public:
 
-    MeshRenderer(std::weak_ptr<Engine::Entity> entity, std::shared_ptr<Ressources::Material> material, std::unique_ptr<Ressources::VertexBuffer> vertexBufferKey, std::unique_ptr<Ressources::IndexBuffer> indexBufferKey);
+    MeshRenderer(std::shared_ptr<Ressources::Material> material, std::unique_ptr<Ressources::VertexBuffer> vertexBufferKey, std::unique_ptr<Ressources::IndexBuffer> indexBufferKey);
 
     void render(Engine::Renderer::Renderer::FrameInfo& frameInfo) override;
 

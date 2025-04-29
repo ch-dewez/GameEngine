@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene/Scene.h"
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,16 +11,16 @@ class Entity {
 public:
     Entity(std::string name);
 
-    void updateComponents();
+    void updateComponents(float dt);
 
     void addComponent(std::shared_ptr<Components::Component> component);
 
     template<typename T>
-    std::vector<std::shared_ptr<T>> getComponents() {
+    std::vector<std::weak_ptr<T>> getComponents() {
         static_assert(std::is_base_of<Components::Component, T>::value, 
         "T must inherit from Component");
 
-        std::vector<std::shared_ptr<T>> components;
+        std::vector<std::weak_ptr<T>> components;
 
         for (const auto& component : m_components) {
             if (std::shared_ptr<T> cast = std::dynamic_pointer_cast<T>(component)) {
@@ -31,7 +32,7 @@ public:
     }
 
     template<typename T>
-    std::shared_ptr<T> getComponent() {
+    std::optional<std::weak_ptr<T>> getComponent() {
         static_assert(std::is_base_of<Components::Component, T>::value, 
         "T must inherit from Component");
 
@@ -40,7 +41,7 @@ public:
                 return cast;
             }
         }
-        return nullptr;
+        return {};
     }
 public:
     UUID uuid;

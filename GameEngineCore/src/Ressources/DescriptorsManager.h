@@ -85,7 +85,8 @@ public:
     DescriptorBuilder& bind_buffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorType type, VkShaderStageFlags stageFlags);
     DescriptorBuilder& bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags);
 
-    VkDescriptorSet build(VkDescriptorSetLayout& layout);
+    VkDescriptorSet build();
+    VkDescriptorSet build(VkDescriptorSetLayout* layout);
 private:
 
     std::vector<VkWriteDescriptorSet> writes;

@@ -27,6 +27,7 @@ public:
     Texture(TextureCreateInfo& info);
     // This should not be used but VulkanApi need this class for initialization but this class need the singleton which is not yet iniatialized
     Texture(TextureCreateInfo& info, ::Engine::Renderer::VulkanApi* api);
+    void initMemberFromInfo(TextureCreateInfo& info);
     ~Texture();
 
     VkDescriptorImageInfo createDescriptorImageInfo();

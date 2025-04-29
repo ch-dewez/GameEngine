@@ -6,7 +6,7 @@ namespace Components {
 
 class PointLight: public Component {
 public:
-    PointLight(std::weak_ptr<Entity> entity);
+    PointLight();
     ::Engine::Renderer::PointLight lightInfo;
 };
 

@@ -5,8 +5,8 @@
 namespace Engine {
 namespace Components {
 
-Transform::Transform(std::weak_ptr<Entity> parentEntity)
-: Component(parentEntity), position(0.0,0.0,0.0), rotation(1.0f, 0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f)
+Transform::Transform()
+: Component(), position(0.0,0.0,0.0), rotation(1.0f, 0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f)
 {
 }
 

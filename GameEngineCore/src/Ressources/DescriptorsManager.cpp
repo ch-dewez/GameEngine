@@ -68,7 +68,11 @@ DescriptorBuilder& DescriptorBuilder::bind_image(uint32_t binding, VkDescriptorI
     return *this;
 }
 
-VkDescriptorSet DescriptorBuilder::build(VkDescriptorSetLayout& layout){
+VkDescriptorSet DescriptorBuilder::build(){
+    return build(nullptr);
+}
+
+VkDescriptorSet DescriptorBuilder::build(VkDescriptorSetLayout* layoutPointer){
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
     
     //build layout first
@@ -79,10 +83,15 @@ VkDescriptorSet DescriptorBuilder::build(VkDescriptorSetLayout& layout){
     layoutInfo.pBindings = bindings.data();
     layoutInfo.bindingCount = bindings.size();
 
-    layout = DescriptorLayoutCache::Instance().create_descriptor_layout(&layoutInfo);
-
-    //allocate descriptor
-    VkDescriptorSet set = DescriptorAllocator::Instance().allocate(layout);
+    VkDescriptorSet set;
+    if (layoutPointer) {
+        *layoutPointer = DescriptorLayoutCache::Instance().create_descriptor_layout(&layoutInfo);
+        //allocate descriptor
+        set = DescriptorAllocator::Instance().allocate(*layoutPointer);
+    }else {
+        VkDescriptorSetLayout layout = DescriptorLayoutCache::Instance().create_descriptor_layout(&layoutInfo);
+        set = DescriptorAllocator::Instance().allocate(layout);
+    }
 
     //write descriptor
     for (VkWriteDescriptorSet& w : writes) {

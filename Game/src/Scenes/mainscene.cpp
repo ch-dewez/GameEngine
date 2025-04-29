@@ -17,6 +17,8 @@
 #include "Scene/Components/DirectionalLight.h"
 #include "Scene/Components/PointLight.h"
 #include "vulkan/vulkan_core.h"
+#include "Scene/Components/Physics/Colliders.h"
+#include "Scene/Components/Physics/RigidBody.h"
 
 namespace Game {
 
@@ -158,12 +160,6 @@ const std::vector<uint16_t> indices = {
 
 
 void MainScene::initialize(){
-    //std::shared_ptr<Engine::Entities::Camera> camera();
-
-    std::shared_ptr<Engine::Entity> entity (new Engine::Entity("First entity"));
-    std::weak_ptr<Engine::Entity> entityWeak (entity);
-
-
     auto blinnPhongColorPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertColor.glsl.spv", "shaders/GameEngineCore/blinnPhongFragColor.glsl.spv", Material::PosNormalVertex::getBindingDescription(), Material::PosNormalVertex::getAttributeDescriptions());
     auto blinnPhongTexPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertText.glsl.spv", "shaders/GameEngineCore/blinnPhongFragText.glsl.spv", Material::PosNormalTexCoordVertex::getBindingDescription(), Material::PosNormalTexCoordVertex::getAttributeDescriptions());
     auto blinnPhongColorPipeline = std::make_unique<Engine::Ressources::Pipeline>(blinnPhongColorPipelineConfig);
@@ -204,84 +200,113 @@ void MainScene::initialize(){
     mat3->updateData(&matStruct3);
 
 
-    auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
-    auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(entityWeak, mat3, std::move(vertexBuffer), std::move(indexBuffer)));
+    {
+        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("First entity"));
+        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
+        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat3, std::move(vertexBuffer), std::move(indexBuffer)));
 
-    std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform(entityWeak));
+        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
 
-    transform->position.y -= 1.0;
-    transform->position.z -= 0.0;
-    transform->setForwardVector(glm::vec3{0.3f, 0.2f, -1.5f});
-    //transform->setForwardVector(glm::vec3{0.0f, 0.2f, -1.0f});
+        transform->position.y += 3.1;
+        transform->position.x -= 3;
+        //transform->position.z -= 0.0;
+        //transform->setForwardVector(glm::vec3{0.3f, 0.2f, -1.5f});
+        //transform->setForwardVector(glm::vec3{0.0f, 0.2f, -1.0f});
 
-    std::shared_ptr<Components::BoxMovement> boxMOvement (new Components::BoxMovement(entityWeak));
-    entity->addComponent(boxMOvement);
-    entity->addComponent(transform);
-    entity->addComponent(meshRenderer);
+        std::shared_ptr<Components::BoxMovement> boxMOvement (new Components::BoxMovement());
+        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody());
+        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
+        //entity->addComponent(boxMOvement);
+        entity->addComponent(collider);
+        entity->addComponent(transform);
+        entity->addComponent(meshRenderer);
+        entity->addComponent(rb);
+        rb->addForce(glm::vec3(1.0f, 0.0f, 0.0f), Engine::Components::ForceMode::Impulse);
+
+        addEntity(entity);
+    }
 
     
+    {
+        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("second entity"));
+        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
+        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat, std::move(vertexBuffer), std::move(indexBuffer)));
+        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
+        std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
+
+        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
+        entity->addComponent(collider);
+        entity->addComponent(boxMovement);
+        boxMovement->amplitude *= -1;
+        entity->addComponent(meshRenderer);
+        entity->addComponent(transform);
+        transform->position.y += 0.1;
+        //transform->setForwardVector(glm::vec3(0.5f, 0.5f, 0.5f));
+        //addEntity(entity);
+    }
     
-    std::shared_ptr<Engine::Entity> entity2 (new Engine::Entity("second entity"));
-    std::weak_ptr<Engine::Entity> entityWeak2 (entity2);
-    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
-    indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer2 (new Engine::Components::MeshRenderer(entityWeak2, mat, std::move(vertexBuffer), std::move(indexBuffer)));
-    std::shared_ptr<Engine::Components::Transform> transform2 (new Engine::Components::Transform(entityWeak2));
-    std::shared_ptr<Components::BoxMovement> boxMOvement2 (new Components::BoxMovement(entityWeak2));
-    entity->addComponent(boxMOvement2);
-    entity2->addComponent(meshRenderer2);
-    entity2->addComponent(transform2);
-    
-    transform2->position.y += 2.0;
-    transform2->position.z -= 2.0;
-    
-    std::shared_ptr<Engine::Entity> plane (new Engine::Entity("plane"));
-    vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
-    indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-    std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer3 (new Engine::Components::MeshRenderer(plane, mat2, std::move(vertexBuffer), std::move(indexBuffer)));
-    std::shared_ptr<Engine::Components::Transform> transform3 (new Engine::Components::Transform(plane));
-    plane->addComponent(meshRenderer3);
-    plane->addComponent(transform3);
-    
-    transform3->position.y -= 3.0;
-    
-    transform3->scale.y = 0.01;
-    transform3->scale.x = 10.0;
-    transform3->scale.z = 10.0;
+    {
+        std::shared_ptr<Engine::Entity> plane (new Engine::Entity("plane"));
+        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
+        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat2, std::move(vertexBuffer), std::move(indexBuffer)));
+        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
+        plane->addComponent(meshRenderer);
+        plane->addComponent(transform);
+
+        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
+        plane->addComponent(collider);
+        std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
+        plane->addComponent(boxMovement);
+        boxMovement->amplitude = 2.0;
+
+        transform->position.y -= 3.0;
+
+        transform->scale.y = 0.01;
+        transform->scale.x = 10.0;
+        transform->scale.z = 10.0;
+        addEntity(plane);
+    } 
 
 
-    std::shared_ptr<Engine::Entities::Camera> camera (new Engine::Entities::Camera("Camera"));
-    camera->load(camera);
-    std::weak_ptr<Engine::Entity> cameraWeak (camera);
+    {
+        std::shared_ptr<Engine::Entities::Camera> camera (new Engine::Entities::Camera("Camera"));
+        camera->load();
 
-    std::shared_ptr<Components::CameraMovement> component (new Components::CameraMovement(cameraWeak));
-    camera->addComponent(component);
+        std::shared_ptr<Components::CameraMovement> component (new Components::CameraMovement());
+        //camera->addComponent(component);
+        auto transform = camera->getComponent<Engine::Components::Transform>()->lock();
+        transform->position.z += 2.0f;
+        transform->position.y += 1.0f;
+        transform->setForwardVector(glm::vec3(0.0f, 0.3f, -1.0f));
+        transform->position -= transform->getForwardVector() * 3.0f;
+        addEntity(camera);
+    }
     
-    std::shared_ptr<Engine::Entity> light (new Engine::Entity("Light"));
-    std::weak_ptr<Engine::Entity> lightWeak (light);
-    std::shared_ptr<Engine::Components::DirectionalLight> dirLight (new Engine::Components::DirectionalLight(lightWeak));
-    dirLight->lightInfo.dir = glm::normalize(glm::vec3(0.3, 1.0, 1.0));
-    dirLight->lightInfo.color = glm::vec3(1.0, 1.0, 1.0);
-    light->addComponent(dirLight);
+    {
+        std::shared_ptr<Engine::Entity> light (new Engine::Entity("Light"));
+        std::shared_ptr<Engine::Components::DirectionalLight> dirLight (new Engine::Components::DirectionalLight());
+        dirLight->lightInfo.dir = glm::normalize(glm::vec3(0.3, 1.0, 1.0));
+        dirLight->lightInfo.color = glm::vec3(1.0, 1.0, 1.0);
+        light->addComponent(dirLight);
+
+        addEntity(light);
+    }
     
-    std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light"));
-    std::weak_ptr<Engine::Entity> pointlightWeak (pointLight);
-    std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight(pointlightWeak));
-    pointLightComp->lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 3.0, 1.0));
-    pointLightComp->lightInfo.color = glm::vec4(1.0, 0.0, 0.2, 1.0);
-    pointLightComp->lightInfo.constantAttenuation = 1.0f;
-    pointLightComp->lightInfo.linearAttenuation = 0.09f;
-    pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
-    pointLight->addComponent(pointLightComp);
+    {
+        std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light"));
+        std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight());
+        pointLightComp->lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 3.0, 1.0));
+        pointLightComp->lightInfo.color = glm::vec4(1.0, 0.0, 0.2, 1.0);
+        pointLightComp->lightInfo.constantAttenuation = 1.0f;
+        pointLightComp->lightInfo.linearAttenuation = 0.09f;
+        pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
+        pointLight->addComponent(pointLightComp);
 
-    addEntity(entity2);
-    addEntity(entity);
-    addEntity(plane);
-    addEntity(camera);
-    addEntity(light);
-    addEntity(pointLight);
-
+        addEntity(pointLight);
+    }
 };
 }
 

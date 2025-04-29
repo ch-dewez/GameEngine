@@ -17,8 +17,8 @@ void Renderer::SetModelBufferDeallocator(std::function<void(uint32_t)> deallocat
     s_modelBufferDeallocator = deallocator;
 }
 
-Renderer::Renderer(std::weak_ptr<Engine::Entity> entity, std::shared_ptr<Ressources::Material> material)
-: Component(entity), m_material(material)
+Renderer::Renderer(std::shared_ptr<Ressources::Material> material)
+: Component(), m_material(material)
 {
     if (!s_modelBufferAllocator) {
         throw std::runtime_error("Model buffer allocator not set. Call Renderer::SetModelBufferAllocator first.");

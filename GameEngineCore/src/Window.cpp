@@ -80,7 +80,9 @@ void Window::initWindow() {
 
 void Window::initVulkan() {
     createVulkanInstance();
-    setupVulkanDebugMessenger();
+    if (enableValidationLayers) {
+        setupVulkanDebugMessenger();
+    }
     createSurface();
 };
 

@@ -7,10 +7,11 @@ namespace Components {
 
 class BoxMovement : public Engine::Components::Component {
 public:
-    BoxMovement(std::weak_ptr<Engine::Entity> entity);
-    void update() override;
+    BoxMovement();
+    void update(float dt) override;
     void start() override;
 
+    float amplitude = 4.0f;
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 };

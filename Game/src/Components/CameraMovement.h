@@ -8,8 +8,8 @@ namespace Components {
 
 class CameraMovement : public Engine::Components::Component {
 public:
-    CameraMovement(std::weak_ptr<Engine::Entity> entity);
-    void update() override;
+    CameraMovement();
+    void update(float dt) override;
     void start() override;
 
     float speed = 0.1;

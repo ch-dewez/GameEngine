@@ -19,7 +19,6 @@ public:
     static constexpr uint32_t MAX_OBJECTS = 1000;
 
     DefaultRenderer();
-    ~DefaultRenderer() override = default;
 
     void render(Engine::Scene& scene) override;
     uint32_t allocateModelBufferIndex(); // Returns next available index
