@@ -61,7 +61,7 @@ void Application::Run()
 
         m_scene->updateComponents(dt);
 
-        Engine::Collisions::ManageCollision(*m_scene);
+        Engine::Collisions::ManageCollision(*m_scene, dt);
 
         m_renderer->render(*m_scene);
 

@@ -68,21 +68,6 @@ void RessourceManager::loadTexture(const std::string& key, std::shared_ptr<Textu
     m_textures.insert(std::pair<std::string, std::shared_ptr<Texture>>(key, texture));
 }
 
-void RessourceManager::loadMaterial(const std::string& key, std::shared_ptr<Material> material) {
-    auto existing = m_materials.find(key);
-    if (existing != m_materials.end()) {
-        throw std::runtime_error("Material with key '" + key + "' already exists");
-    }
-    m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, material));
-}
-
-void RessourceManager::loadMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate) {
-    auto existing = m_materialsTemplate.find(key);
-    if (existing != m_materialsTemplate.end()) {
-        throw std::runtime_error("MaterialTemplate with key '" + key + "' already exists");
-    }
-    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, materialTemplate));
-}
 
 std::shared_ptr<Texture> RessourceManager::loadOrGetTexture(const std::string& key, std::shared_ptr<Texture> texture) {
     auto existing = m_textures.find(key);
@@ -93,6 +78,7 @@ std::shared_ptr<Texture> RessourceManager::loadOrGetTexture(const std::string& k
     return texture;
 }
 
+
 std::shared_ptr<Material> RessourceManager::loadOrGetMaterial(const std::string& key, std::shared_ptr<Material> material) {
     auto existing = m_materials.find(key);
     if (existing != m_materials.end()) {
@@ -102,6 +88,15 @@ std::shared_ptr<Material> RessourceManager::loadOrGetMaterial(const std::string&
     return material;
 }
 
+void RessourceManager::loadMaterial(const std::string& key, std::shared_ptr<Material> material) {
+    auto existing = m_materials.find(key);
+    if (existing != m_materials.end()) {
+        throw std::runtime_error("Material with key '" + key + "' already exists");
+    }
+    m_materials.insert(std::pair<std::string, std::shared_ptr<Material>>(key, material));
+}
+
+
 std::shared_ptr<MaterialTemplate> RessourceManager::loadOrGetMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate) {
     auto existing = m_materialsTemplate.find(key);
     if (existing != m_materialsTemplate.end()) {
@@ -110,6 +105,35 @@ std::shared_ptr<MaterialTemplate> RessourceManager::loadOrGetMaterialTemplate(co
     m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, materialTemplate));
     return materialTemplate;
 }
+
+
+void RessourceManager::loadMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate) {
+    auto existing = m_materialsTemplate.find(key);
+    if (existing != m_materialsTemplate.end()) {
+        throw std::runtime_error("MaterialTemplate with key '" + key + "' already exists");
+    }
+    m_materialsTemplate.insert(std::pair<std::string, std::shared_ptr<MaterialTemplate>>(key, materialTemplate));
+}
+
+void RessourceManager::loadMesh(const std::string& key, std::shared_ptr<Mesh> mesh){
+    auto existing = m_meshes.find(key);
+    if (existing != m_meshes.end()) {
+        throw std::runtime_error("MaterialTemplate with key '" + key + "' already exists");
+    }
+    m_meshes.insert(std::pair<std::string, std::shared_ptr<Mesh>>(key, mesh));
+};
+
+std::shared_ptr<Mesh> RessourceManager::loadOrGetMesh(const std::string& key, std::shared_ptr<Mesh> mesh){
+
+    auto existing = m_meshes.find(key);
+    if (existing != m_meshes.end()) {
+        return existing->second;
+    }
+    m_meshes.insert(std::pair<std::string, std::shared_ptr<Mesh>>(key, mesh));
+    return mesh;
+};
+
+
 
 
 /*std::shared_ptr<Texture> RessourceManager::createTexture(const std::string& key, const std::string &imagePath) {*/

@@ -43,6 +43,8 @@ public:
         }
         return {};
     }
+
+    void setScene(Scene* scene) {m_scene = scene;};
 public:
     UUID uuid;
     std::string name;

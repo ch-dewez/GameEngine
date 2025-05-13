@@ -24,6 +24,7 @@ target_compile_definitions(GameEngineCore
     PUBLIC 
         GLFW_INCLUDE_VULKAN
         STB_IMAGE_IMPLEMENTATION
+        TINY_OBJ_LOADER_IMPLEMENTATION
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG>
         $<$<CONFIG:Release>:NDEBUG>
@@ -33,6 +34,7 @@ target_include_directories(GameEngineCore
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${stb_image_SOURCE_DIR}
+        ${tiny_obj_loader_SOURCE_DIR}
     PRIVATE
         ${Vulkan_INCLUDE_DIRS}
 )

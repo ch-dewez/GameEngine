@@ -358,8 +358,8 @@ void VulkanApi::cleanupSwapChain(){
         vkDestroyImageView(m_device, m_swapChainImageViews[i], nullptr);
     }
 
-    //delete m_depthBuffer;
-    //m_depthBuffer = nullptr;
+    delete m_depthBuffer;
+    m_depthBuffer = nullptr;
 
     vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 };
@@ -377,9 +377,10 @@ void VulkanApi::recreateSwapChain() {
     cleanupSwapChain();
 
     createSwapChain();
+    createDepthBuffer();
     createImageViews();
-    //createDepthResources();
     createFrameBuffers();
+    //createDepthResources();
 
     // Call all recreation callbacks
     for (auto& callback : m_recreationCallbacks) {
@@ -498,6 +499,10 @@ void VulkanApi::createFrameBuffers() {
 }
 
 void VulkanApi::createDepthBuffer() {
+    if (m_depthBuffer){
+        delete m_depthBuffer;
+        m_depthBuffer = nullptr;
+    }
     auto info = Ressources::Texture::TextureCreateInfo::getDefaultForDepthBuffer(m_swapChainExtent.width, m_swapChainExtent.height);
     m_depthBuffer = new Ressources::Texture(info, this);
 }

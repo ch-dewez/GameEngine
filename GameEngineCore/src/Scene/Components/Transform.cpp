@@ -11,31 +11,47 @@ Transform::Transform()
 }
 
 glm::mat4 Transform::getModelMatrix() {
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    
-    // First translate
-    modelMatrix = glm::translate(modelMatrix, position);
-    
-    // Then rotate using the quaternion
-    modelMatrix = modelMatrix * glm::mat4_cast(rotation);
-    
-    // Finally scale
-    modelMatrix = glm::scale(modelMatrix, scale);
+
+    glm::mat4 modelMatrix = getTranslationMatrix() * glm::mat4(getRotationMatrix()) * glm::mat4(getScalingMatrix());
     
     return modelMatrix;
 }
 
+glm::mat4 Transform::getTranslationMatrix(){
+    return glm::translate(glm::mat4(1.0f), position);
+};
+
+glm::mat3 Transform::getRotationMatrix(){
+    return glm::mat3_cast(rotation);
+};
+
+glm::mat3 Transform::getScalingMatrix(){
+    return glm::scale(glm::mat4(1.0f), scale);
+};
+
+
+glm::vec3 Transform::transform(glm::vec3 point){
+    return getModelMatrix() * glm::vec4(point, 1.0);
+};
+
+glm::vec3 Transform::inverseTransform(glm::vec3 point){
+    return glm::inverse(getModelMatrix())* glm::vec4(point, 1.0);
+};
+
 glm::vec3 Transform::getForwardVector() {
-    return glm::rotate(glm::inverse(rotation), glm::vec3(0.0, 0.0, -1.0));
+    return rotation * glm::vec3(0.0, 0.0, -1.0);
+    //return glm::rotate(glm::inverse(rotation), glm::vec3(0.0, 0.0, -1.0));
 }
 
 
 glm::vec3 Transform::getRightVector() {
-    return glm::rotate(glm::inverse(rotation), glm::vec3(1.0, 0.0, 0.0));
+    return rotation * glm::vec3(1.0, 0.0, .0);
+    //return glm::rotate(glm::inverse(rotation), glm::vec3(1.0, 0.0, 0.0));
 }
 
 glm::vec3 Transform::getUpVector() {
-    return glm::rotate(glm::inverse(rotation), glm::vec3(0.0, 1.0, 0.0));
+    return rotation * glm::vec3(0.0, 1.0, .0);
+    //return glm::rotate(glm::inverse(rotation), glm::vec3(0.0, 1.0, 0.0));
 }
 
 glm::vec3 Transform::setForwardVector(glm::vec3 forward, glm::vec3 up) {

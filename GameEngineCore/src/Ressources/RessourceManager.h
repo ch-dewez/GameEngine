@@ -2,6 +2,7 @@
 #include "Material.h"
 #include "Pipeline.h"
 #include "Texture.h"
+#include "Mesh.h"
 #include <map>
 #include <memory>
 #include <optional>
@@ -28,11 +29,13 @@ public:
   void loadTexture(const std::string& key, std::shared_ptr<Texture> texture);
   void loadMaterial(const std::string& key, std::shared_ptr<Material> material);
   void loadMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate);
+  void loadMesh(const std::string& key, std::shared_ptr<Mesh> mesh);
   //void loadPipeline(const std::string& key, std::shared_ptr<Pipeline> pipeline);
 
   std::shared_ptr<Texture> loadOrGetTexture(const std::string& key, std::shared_ptr<Texture> texture);
   std::shared_ptr<Material> loadOrGetMaterial(const std::string& key, std::shared_ptr<Material> material);
   std::shared_ptr<MaterialTemplate> loadOrGetMaterialTemplate(const std::string& key, std::shared_ptr<MaterialTemplate> materialTemplate);
+  std::shared_ptr<Mesh> loadOrGetMesh(const std::string& key, std::shared_ptr<Mesh> mesh);
   //std::shared_ptr<Pipeline> loadOrGetPipeline(const std::string& key, std::shared_ptr<Pipeline> pipeline);
 
   // Create methods
@@ -42,6 +45,7 @@ public:
   //std::shared_ptr<Pipeline> createPipeline(std::string key, const PipelineConfigInfo &configInfo);
 
 private:
+  std::map<std::string, std::shared_ptr<Mesh>> m_meshes;
   std::map<std::string, std::shared_ptr<Texture>> m_textures;
   std::map<std::string, std::shared_ptr<Material>> m_materials;
   std::map<std::string, std::shared_ptr<MaterialTemplate>> m_materialsTemplate;

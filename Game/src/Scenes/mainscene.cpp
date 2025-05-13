@@ -8,8 +8,6 @@
 #include "Ressources/RessourceManager.h"
 #include "Ressources/Pipeline.h"
 #include "Ressources/Vertex.h"
-#include "Ressources/vertexBuffer.h"
-#include "Ressources/IndexBuffer.h"
 #include "Ressources/Material.h"
 #include "../Materials/defaultMaterial.h"
 #include <memory>
@@ -143,7 +141,7 @@ const std::vector<Material::PosNormalVertex> verticesColor = {
 /*    20, 21, 22, 22, 23, 20*/
 /*};*/
 
-const std::vector<uint16_t> indices = {
+const std::vector<uint32_t> indices = {
     // Front face (CCW from front)
     0, 1, 2,    2, 3, 0,
     // Back face (CCW from back)
@@ -176,7 +174,7 @@ void MainScene::initialize(){
     auto mat = std::make_shared<Engine::Ressources::Material>(blinnPhongColorTemplate, sizeof(Material::blinnPhongColor));
     ressourceManager.loadMaterial("mat", mat);
     auto defaultMat = Material::blinnPhongColor();
-    defaultMat.diffuse = glm::vec3(2.0, 8.0, 1.0);
+    defaultMat.diffuse = glm::vec3(1.0, 1.0, 1.0);
     defaultMat.shininess = 1.0;
     mat->updateData(&defaultMat);
 
@@ -199,59 +197,65 @@ void MainScene::initialize(){
     matStruct3.shininess = 1.0;
     mat3->updateData(&matStruct3);
 
+    auto cubeTexMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
+    auto cubeMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
+    ressourceManager.loadMesh("cubeTexMesh", cubeTexMesh);
+    ressourceManager.loadMesh("cubeMesh", cubeMesh);
+
 
     {
         std::shared_ptr<Engine::Entity> entity (new Engine::Entity("First entity"));
-        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
-        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat3, std::move(vertexBuffer), std::move(indexBuffer)));
+        addEntity(entity);
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat3, cubeTexMesh));
 
         std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
 
-        transform->position.y += 3.1;
-        transform->position.x -= 3;
-        //transform->position.z -= 0.0;
-        //transform->setForwardVector(glm::vec3{0.3f, 0.2f, -1.5f});
-        //transform->setForwardVector(glm::vec3{0.0f, 0.2f, -1.0f});
+        transform->position.y -= 1.5;
 
         std::shared_ptr<Components::BoxMovement> boxMOvement (new Components::BoxMovement());
-        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody());
+        glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform->scale.x, transform->scale.y, transform->scale.z);
+        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody(glm::vec3(0.0f), ibodyinv));
+        //rb->setGravity(glm::vec3(0.0f));
+        //rb->m_angularMomentum = {1.0, 1.0, 0.0};
+        //rb->addForce(glm::vec3(-0.76f, 0.0f, 0.0f), Engine::Components::ForceMode::Impulse);
         std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
         //entity->addComponent(boxMOvement);
         entity->addComponent(collider);
         entity->addComponent(transform);
         entity->addComponent(meshRenderer);
         entity->addComponent(rb);
-        rb->addForce(glm::vec3(1.0f, 0.0f, 0.0f), Engine::Components::ForceMode::Impulse);
-
-        addEntity(entity);
     }
-
     
     {
-        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("second entity"));
-        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
-        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat, std::move(vertexBuffer), std::move(indexBuffer)));
+        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("fourth entity"));
+        addEntity(entity);
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat, cubeMesh));
         std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
         std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
 
+
+        glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform->scale.x, transform->scale.y, transform->scale.z);
+        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody(glm::vec3(0.0f), ibodyinv));
+        //entity->addComponent(rb);
         std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
         entity->addComponent(collider);
-        entity->addComponent(boxMovement);
-        boxMovement->amplitude *= -1;
+        //entity->addComponent(boxMovement);
+        //boxMovement->amplitude *= -1;
         entity->addComponent(meshRenderer);
         entity->addComponent(transform);
-        transform->position.y += 0.1;
+
+        transform->position.y -=2.5;
+        transform->scale.x =1.2;
+        transform->scale.z =1.2;
+        transform->scale.y =1.2;
+        transform->position.x -= 0.8f;
         //transform->setForwardVector(glm::vec3(0.5f, 0.5f, 0.5f));
-        //addEntity(entity);
     }
     
     {
         std::shared_ptr<Engine::Entity> plane (new Engine::Entity("plane"));
-        auto vertexBuffer = std::make_unique<Engine::Ressources::VertexBuffer>((void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
-        auto indexBuffer = std::make_unique<Engine::Ressources::IndexBuffer>((void*)indices.data(), (size_t)indices.size() * sizeof(indices[0]), indices.size());
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat2, std::move(vertexBuffer), std::move(indexBuffer)));
+        addEntity(plane);
+        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat2, cubeMesh));
         std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
         plane->addComponent(meshRenderer);
         plane->addComponent(transform);
@@ -259,53 +263,65 @@ void MainScene::initialize(){
         std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
         plane->addComponent(collider);
         std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
-        plane->addComponent(boxMovement);
-        boxMovement->amplitude = 2.0;
+        boxMovement->amplitude = -2.0;
+        //plane->addComponent(boxMovement);
 
         transform->position.y -= 3.0;
 
         transform->scale.y = 0.01;
         transform->scale.x = 10.0;
         transform->scale.z = 10.0;
-        addEntity(plane);
-    } 
+        //transform->setForwardVector(glm::vec3(1.0, -0.1, 0.0f));
+    }
 
 
     {
         std::shared_ptr<Engine::Entities::Camera> camera (new Engine::Entities::Camera("Camera"));
+        addEntity(camera);
         camera->load();
 
-        std::shared_ptr<Components::CameraMovement> component (new Components::CameraMovement());
-        //camera->addComponent(component);
+        std::shared_ptr<Components::CameraMovement> cameraMovement (new Components::CameraMovement());
+        camera->addComponent(cameraMovement);
+
         auto transform = camera->getComponent<Engine::Components::Transform>()->lock();
+        transform->position.x += 2.0f;
         transform->position.z += 2.0f;
         transform->position.y += 1.0f;
-        transform->setForwardVector(glm::vec3(0.0f, 0.3f, -1.0f));
+        transform->setForwardVector(glm::vec3(-0.0f, 0.0f, -1.0f));
         transform->position -= transform->getForwardVector() * 3.0f;
-        addEntity(camera);
     }
     
     {
         std::shared_ptr<Engine::Entity> light (new Engine::Entity("Light"));
+        addEntity(light);
         std::shared_ptr<Engine::Components::DirectionalLight> dirLight (new Engine::Components::DirectionalLight());
         dirLight->lightInfo.dir = glm::normalize(glm::vec3(0.3, 1.0, 1.0));
         dirLight->lightInfo.color = glm::vec3(1.0, 1.0, 1.0);
         light->addComponent(dirLight);
-
-        addEntity(light);
     }
     
     {
         std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light"));
+        //addEntity(pointLight);
         std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight());
-        pointLightComp->lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 3.0, 1.0));
+        pointLightComp->lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 0.0, 1.0));
         pointLightComp->lightInfo.color = glm::vec4(1.0, 0.0, 0.2, 1.0);
         pointLightComp->lightInfo.constantAttenuation = 1.0f;
         pointLightComp->lightInfo.linearAttenuation = 0.09f;
         pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
         pointLight->addComponent(pointLightComp);
+    }
 
+    {
+        std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light green"));
         addEntity(pointLight);
+        std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight());
+        pointLightComp->lightInfo.pos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pointLightComp->lightInfo.color = glm::vec4(0.0, 1.0, 0.2, 1.0);
+        pointLightComp->lightInfo.constantAttenuation = 1.0f;
+        pointLightComp->lightInfo.linearAttenuation = 0.09f;
+        pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
+        pointLight->addComponent(pointLightComp);
     }
 };
 }

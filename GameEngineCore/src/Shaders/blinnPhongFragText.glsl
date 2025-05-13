@@ -17,6 +17,11 @@ struct DirectionalLight {
     vec4 color;
 };
 
+layout(set = 0, binding = 0) uniform UniformBufferObject {
+    mat4 view;
+    mat4 proj;
+} ubo;
+
 layout(set = 0, binding = 1) uniform lightBufferObject {
     uint nbPointLights;
     uint nbDirectionalLights;
@@ -41,8 +46,9 @@ void main() {
     vec4 diffuse = texture(texSampler, inTexCoord);
     for (uint i = 0; i < lights.nbPointLights; i++) {
         PointLight light = lights.pointLights[i];
-        vec4 lightDir = normalize(light.pos - inVertPos);
-        float distance = dot(lightDir, lightDir);
+        vec4 lightViewPos = ubo.view * light.pos;
+        vec4 lightDir = normalize(lightViewPos - inVertPos);
+        float distance = distance(lightViewPos, inVertPos);
         float lambertian = max(dot(lightDir, inNormal), 0.0);
         float specular = 0.0;
 

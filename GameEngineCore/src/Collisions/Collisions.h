@@ -17,21 +17,26 @@ namespace Collisions {
 
 
 struct ContactPoint {
-    glm::vec3 Position; 
-    float Penetration;
+    glm::vec3 position; 
+};
+
+struct Tangent {
+    glm::vec3 vec1;
+    glm::vec3 vec2;
 };
 
 struct ContactManifold
 {
-    int pointCount;
-    ContactPoint points[4];
+    std::vector<ContactPoint> points;
     glm::vec3 normal;
+    Tangent tangent;
+    float penetration;
 
     ContactManifold();
-    ContactManifold(int pointCount, ContactPoint contactPoints[4], glm::vec3 normal);
+    ContactManifold(std::vector<ContactPoint> contactPoints, glm::vec3 normal, float penetration);
 };
 
-void ManageCollision(Scene& scene);
+void ManageCollision(Scene& scene, float dt);
 
 }
 }

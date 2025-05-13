@@ -15,8 +15,8 @@ public:
     void setScene(Scene* scene);
 public:
     
+    Entity* m_entity; // this one can be a pointer and not a weak_ptr because if the entity doesn't exist nor does the component
 protected:
-   Entity* m_entity; // this one can be a pointer and not a weak_ptr because if the entity doesn't exist nor does the component
     Scene* m_scene;
 };
 

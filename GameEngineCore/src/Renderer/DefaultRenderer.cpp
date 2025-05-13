@@ -44,7 +44,7 @@ DefaultRenderer::DefaultRenderer()
 
         auto descriptorBuilder = Engine::Ressources::DescriptorBuilder();
         descriptorBuilder
-            .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
             .bind_buffer(1, &lightsBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
         m_globalDescriptorSets[i] = descriptorBuilder.build(&globalDescriptorLayout);
 
@@ -134,13 +134,6 @@ void DefaultRenderer::render(Engine::Scene& scene) {
             lightEnvironment.directionalLights[directionalLightIndex] = directionalLight.lock()->lightInfo;
             directionalLightIndex ++;
         }
-    }
-
-    for (int i =pointLightIndex; i<MAX_POINT_LIGHTS;i++) {
-        memset(&lightEnvironment.pointLights[i], 0, sizeof(PointLight));
-    }
-    for (int i =directionalLightIndex; i<MAX_DIRECTIONAL_LIGHTS;i++) {
-        memset(&lightEnvironment.directionalLights[i], 0, sizeof(DirectionalLight));
     }
 
     lightEnvironment.nbDirectionalLight = directionalLightIndex;

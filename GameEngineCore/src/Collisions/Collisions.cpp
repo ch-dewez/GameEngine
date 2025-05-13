@@ -1,6 +1,7 @@
 #include "Collisions.h"
 #include <algorithm>
-#include <cmath>
+#include <cassert>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -9,32 +10,116 @@
 #include "Scene/Entities/Entity.h"
 #include "Scene/Components/Physics/Colliders.h"
 #include "Scene/Components/Physics/RigidBody.h"
+#include "glm/fwd.hpp"
 
 namespace Engine{
 namespace Collisions {
+
 
 struct Object {
     std::shared_ptr<Entity> entity;
     std::vector<std::shared_ptr<Components::Collider>> colliders;
     std::shared_ptr<Components::Transform> transform;
     std::optional<std::weak_ptr<Components::RigidBody>> rigidBody;
+
+    
 };
 
-
 ContactManifold::ContactManifold()
-: pointCount(0), normal(0.0)
+: normal(0.0)
 {
 }
 
-ContactManifold::ContactManifold(int pointCount, ContactPoint contactPoints[4], glm::vec3 normal)
-: pointCount(pointCount), normal(normal), points(*contactPoints)
+ContactManifold::ContactManifold(std::vector<ContactPoint> contactPoints, glm::vec3 normal, float penetration)
+: normal(normal), points(contactPoints), penetration(penetration)
 {
 }
+
+
+// idk how to call the other vec but it's the normal for contact constraint or the tangent for friction (basically the vec at which the force is applied)
+float calculateEffectiveMassOneRb(float mass, glm::mat3& inertiaTensor, glm::vec3& relativePosition, glm::vec3& otherVec){
+    glm::vec3 cross = glm::cross(relativePosition, otherVec);
+    return 1 / ((1.0f/mass) + glm::dot(cross, (inertiaTensor * cross)));
+};
+
+float calculateEffectiveMassTwoRb(float massA, glm::mat3& inertiaTensorA, glm::vec3& relativePositionA,
+                                  float massB, glm::mat3& inertiaTensorB, glm::vec3& relativePositionB,
+                                  glm::vec3& otherVec){
+    glm::vec3 crossA = glm::cross(relativePositionA, otherVec);
+    glm::vec3 crossB = glm::cross(relativePositionB, otherVec);
+    return 1 / ((1.0f/massA) + (1.0f/massB) + 
+                glm::dot(crossA, (inertiaTensorA * crossA)) +
+                glm::dot(crossB, (inertiaTensorB * crossB)));
+};
+
+struct PreStepInfo{
+    bool oneRb = false;
+
+    std::vector<glm::vec3> relativePositionA;
+    std::vector<glm::vec3> relativePositionB;
+    std::vector<float> normalEffectiveMass;
+    std::vector<float> tangent1EffectiveMass;
+    std::vector<float> tangent2EffectiveMass;
+
+
+    void calculatePreStepInfo(Components::RigidBody* rbA, Components::RigidBody* rbB, ContactManifold& manifold){
+        if (!rbA || !rbB){
+            oneRb = true;
+            assert(rbA);
+        }
+
+        relativePositionA.resize(manifold.points.size());
+        relativePositionB.resize(manifold.points.size());
+        normalEffectiveMass.resize(manifold.points.size());
+        tangent1EffectiveMass.resize(manifold.points.size());
+        tangent2EffectiveMass.resize(manifold.points.size());
+
+        glm::mat3 inertiaTensorA = rbA->getinvInertiaTensor();
+        glm::mat3 inertiaTensorB;
+        if (!oneRb){
+            inertiaTensorB = rbA->getinvInertiaTensor();
+        }
+        //
+        for (int i=0;i<manifold.points.size();i++){
+
+            ContactPoint& point = manifold.points[i];
+            relativePositionA[i] = point.position - rbA->getWorldCenterOfMass();
+            if (!oneRb){
+                relativePositionB[i] = point.position - rbB->getWorldCenterOfMass();
+            }
+
+            if (oneRb){
+                float mass = rbA->mass;
+                normalEffectiveMass[i] = calculateEffectiveMassOneRb(mass, inertiaTensorA, relativePositionA[i], manifold.normal);
+                tangent1EffectiveMass[i] = calculateEffectiveMassOneRb(mass, inertiaTensorA, relativePositionA[i], manifold.tangent.vec1);
+                tangent2EffectiveMass[i] = calculateEffectiveMassOneRb(mass, inertiaTensorA, relativePositionA[i], manifold.tangent.vec2);
+            }else {
+                float massA = rbA->mass;
+                float massB = rbB->mass;
+                normalEffectiveMass[i] = calculateEffectiveMassTwoRb(massA, inertiaTensorA, relativePositionA[i],
+                                                                     massB, inertiaTensorB, relativePositionB[i],
+                                                                     manifold.normal);
+                tangent1EffectiveMass[i] = calculateEffectiveMassTwoRb(massA, inertiaTensorA, relativePositionA[i],
+                                                                       massB, inertiaTensorB, relativePositionB[i],
+                                                                       manifold.tangent.vec1);
+                tangent2EffectiveMass[i] = calculateEffectiveMassTwoRb(massA, inertiaTensorA, relativePositionA[i],
+                                                                       massB, inertiaTensorB, relativePositionB[i],
+                                                                       manifold.tangent.vec2);
+            }
+        }
+    }
+};
 
 struct Collision {
     Object& objA;
     Object& objB;
     ContactManifold manifold;
+
+    PreStepInfo preStep;
+
+    float normalImpulse; // accumulated impusle (contact constraints)
+    float tangent1Impulse; // accumulated impusle along tangent1 for the friction
+    float tangent2Impulse; // accumulated impusle along tangent2 for the friction
 };
 
 using FindContactFunc = ContactManifold(*)(const Components::Collider*,
@@ -42,9 +127,9 @@ using FindContactFunc = ContactManifold(*)(const Components::Collider*,
 
 
 std::vector<Collision> detectCollisions(std::vector<Object>& objects);
-void solveCollision(std::vector<Collision>& collisions);
+void solveCollision(std::vector<Collision>& collisions, float dt);
 
-void ManageCollision(Scene &scene) {
+void ManageCollision(Scene &scene, float dt) {
     std::vector<Object> entities; // entity with colliders
     for (auto entity : scene.getAllEntities()) {
         auto collidersWeak = entity->getComponents<Components::Collider>();
@@ -60,7 +145,7 @@ void ManageCollision(Scene &scene) {
     }
 
     auto collisions = detectCollisions(entities);
-    solveCollision(collisions);
+    solveCollision(collisions, dt);
 }
 
 ContactManifold TestSphereSphere(const Components::Collider* colliderA, const Components::Collider* colliderB) {
@@ -80,9 +165,9 @@ ContactManifold TestSphereSphere(const Components::Collider* colliderA, const Co
         glm::vec3 normal(0.0f, 1.0f, 0.0f);
         glm::vec3 surfacePointA = aCenter + aRadius * normal;
         glm::vec3 surfacePointB = bCenter + bRadius * -normal;
-        point.Position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
-        point.Penetration = aRadius + bRadius;
-        return ContactManifold(1, &point, normal);
+        point.position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
+        auto penetration = aRadius + bRadius;
+        return ContactManifold({point}, normal, penetration);
     }
 
     if (distance > aRadius + bRadius) {
@@ -94,44 +179,11 @@ ContactManifold TestSphereSphere(const Components::Collider* colliderA, const Co
     ContactPoint point;
     glm::vec3 surfacePointA = aCenter + aRadius * normal;
     glm::vec3 surfacePointB = bCenter + bRadius * -normal;
-    point.Position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
-    point.Penetration = distance - (aRadius + bRadius);
-    return ContactManifold(1, &point, normal);
+    point.position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
+    auto penetration = distance - (aRadius + bRadius);
+    return ContactManifold({point}, normal, penetration);
 
 }
-
-// https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat
-/*bool Separated(std::vector<glm::vec3>& vertsA, std::vector<glm::vec3> vertsB, glm::vec3 axis)*/
-/*{*/
-/*    // Handles the cross product = {0,0,0} case*/
-/*    if (axis == glm::vec3(0))*/
-/*        return false;*/
-/**/
-/*    float aMin = std::numeric_limits<float>::max();*/
-/*    float aMax = -std::numeric_limits<float>::max();*/
-/*    float bMin = std::numeric_limits<float>::max();*/
-/*    float bMax = -std::numeric_limits<float>::max();*/
-/**/
-/*    // Define two intervals, a and b. Calculate their min and max values*/
-/*    for (int i = 0; i < vertsA.size(); i++)*/
-/*    {*/
-/*        float aDist = glm::dot(vertsA[i], axis);*/
-/*        aMin = aDist < aMin ? aDist : aMin;*/
-/*        aMax = aDist > aMax ? aDist : aMax;*/
-/*    }*/
-/**/
-/*    for (int i = 0; i < vertsB.size(); i++)*/
-/*    {*/
-/*        float bDist = glm::dot(vertsB[i], axis);*/
-/*        bMin = bDist < bMin ? bDist : bMin;*/
-/*        bMax = bDist > bMax ? bDist : bMax;*/
-/*    }*/
-/**/
-/*    // One-dimensional intersection test between a and b*/
-/*    float longSpan = std::max(aMax, bMax) - std::max(aMin, bMin);*/
-/*    float sumSpan = aMax - aMin + bMax - bMin;*/
-/*    return longSpan >= sumSpan; // > to treat touching as intersection*/
-/*}*/
 
 glm::vec3 getOrthogonalVector(glm::vec3 vec) {
     glm::vec3 C;
@@ -142,20 +194,6 @@ glm::vec3 getOrthogonalVector(glm::vec3 vec) {
     return glm::cross(vec, C);
 }
 
-
-/*ContactManifold TestCubeCube(const Components::Collider* colliderA, const Components::Collider* colliderB) {*/
-/*    Components::CubeCollider* cubeA = (Components::CubeCollider*)colliderA;*/
-/*    Components::CubeCollider* cubeB = (Components::CubeCollider*)colliderB;*/
-/**/
-/*    auto axes = cubeA->getAllAxisSAT(*cubeB);  // axes = plural of axis (that's weird)*/
-/*    auto cubeAVertices = cubeA->getAllVertices();*/
-/*    auto cubeBVertices = cubeB->getAllVertices();*/
-/**/
-/*    for (auto axis : axes) {*/
-/*        bool separated = Separated(cubeBVertices, cubeBVertices, axis);*/
-/*    }*/
-/*}*/
-/**/
 
 ContactManifold TestSphereCapsule(const Components::Collider* colliderA, const Components::Collider* colliderB) {
     Components::SphereCollider* sphere = (Components::SphereCollider*)colliderA;
@@ -181,9 +219,9 @@ ContactManifold TestSphereCapsule(const Components::Collider* colliderA, const C
         glm::vec3 normal = glm::normalize(getOrthogonalVector(bottomSphereVec));
         glm::vec3 surfacePointA = capsuleCenterProj + CapsuleRadius * normal;
         glm::vec3 surfacePointB = SphereCenter + SphereRadius * -normal;
-        point.Position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
-        point.Penetration = SphereRadius + CapsuleRadius;
-        return ContactManifold(1, &point, normal);
+        point.position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
+        auto penetration = SphereRadius + CapsuleRadius;
+        return ContactManifold({point}, normal, penetration);
     }
 
     if (distance > SphereRadius + CapsuleRadius) {
@@ -195,9 +233,9 @@ ContactManifold TestSphereCapsule(const Components::Collider* colliderA, const C
     ContactPoint point;
     glm::vec3 surfacePointA = SphereCenter + SphereRadius * -normal;
     glm::vec3 surfacePointB = capsuleCenterProj + CapsuleRadius * normal;
-    point.Position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
-    point.Penetration = distance - (SphereRadius + CapsuleRadius);
-    return ContactManifold(1, &point, normal);
+    point.position = surfacePointA + (surfacePointB - surfacePointA) / 2.0f;
+    auto penetration = distance - (SphereRadius + CapsuleRadius);
+    return ContactManifold({point}, normal, penetration);
 }
 
 ContactManifold findCollision(const Components::Collider* a,
@@ -230,21 +268,24 @@ std::vector<Collision> detectCollisions(std::vector<Object>& objects) {
         // we start at i+1 like that we only have unique pairs (if i then i==j and entity == entity)
         for (int j=i+1;j<objects.size();j++) {
             Object& b = objects[j];
+            // No response if none has rigidbody so no need to check them
+            if (!a.rigidBody.has_value() && !b.rigidBody.has_value()){
+                continue;
+            }
             for (std::shared_ptr<Components::Collider> colliderA : a.colliders)
             for (std::shared_ptr<Components::Collider> colliderB : b.colliders) {
 
-                ContactManifold points = findCollision(
+                ContactManifold manifold = findCollision(
                     colliderA.get(),
                     colliderB.get()
                 );
 
-                if (points.pointCount > 0){
-                    /*std::cout << "Collisions Detected between " << a.entity->name << " and " << b.entity->name << std::endl;*/
-                    /*std::cout << "depth " << points.points[0].Penetration;*/
-                    /*std::cout << " and position " << points.points[0].Position.x<< " " << points.points[0].Position.y << " " << points.points[0].Position.z;*/
-                    /*std::cout << " normal " << points.normal.x << " "<< points.normal.y << " "<< points.normal.z << std::endl;*/
+                if (manifold.points.size() > 0){
+                    std::cout << "Collisions Detected between " << a.entity->name << " and " << b.entity->name << std::endl;
+                    std::cout << "Nb contact point" << manifold.points.size() << std::endl;
 
-                    collisions.emplace_back(a, b, points);
+
+                    collisions.emplace_back(a, b, manifold);
                 }
             }
         }
@@ -253,47 +294,120 @@ std::vector<Collision> detectCollisions(std::vector<Object>& objects) {
     return std::move(collisions);
 }
 
-void solveCollisionOneRb(Collision& collision){
-    // always objA that have the rigidbody
+
+// TODO: Physics material
+void solveCollisionOneRb(Collision& collision, float dt){
+    // Ensure objA has the rigidbody
     if (collision.objB.rigidBody.has_value()) {
-        /*std::cout << "swapping" << std::endl;*/
+        std::cout << "swapping" << std::endl;
         std::swap(collision.objA, collision.objB);
         collision.manifold.normal *= -1.0f;
     }
-    collision.manifold.normal *= -1;
 
-    //moving the object in bound
-    collision.objA.transform->position += collision.manifold.normal * collision.manifold.points[0].Penetration;
 
     auto rb = collision.objA.rigidBody->lock();
-    auto acceleration = rb->getCurrentAcceleration();
-    auto normalizedAccel = glm::normalize(acceleration);
-    rb->resetAcceleration();
 
-    // getting reflection vector : https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
-        //𝑟=𝑑−2(𝑑⋅𝑛)𝑛
-    auto reflected = normalizedAccel - 2 * glm::dot(normalizedAccel, collision.manifold.normal) * collision.manifold.normal;
+    /*glm::mat3 worldInvInertiaTensor = localInvInertia;*/
 
-    auto force = reflected * glm::length(acceleration) / rb->mass;
+    /*std::cout << "Omega " <<omega.x ;*/
+    /*std::cout << " " << omega.y ;*/
+    /*std::cout << " " << omega.z << std::endl;*/
+    auto omega = rb->getOmega();
+    auto velocity = rb->getCurrentVelocity();
+    std::cout << "velocity " << velocity.y << std::endl;;
 
-    rb->addForce(force, Components::ForceMode::Impulse);
+    PreStepInfo& preStep = collision.preStep;
+
+    for (int i=0;i<collision.manifold.points.size();i++){
+        ContactPoint& point = collision.manifold.points[i];
+
+        glm::vec3 relativeVelocity = velocity + glm::cross(omega, preStep.relativePositionA[i]);
+
+        // friction
+        {
+            /*const float velocityAlongT1 = glm::dot(relativeVelocity, collision.manifold.tangent.vec1);*/
+            /*const float velocityAlongT2 = glm::dot(relativeVelocity, collision.manifold.tangent.vec2);*/
+            /**/
+            /*float deltaJf1_desired = (t1EffectiveMass > 0.00001f) ? -velocityAlongT1 / t1EffectiveMass : 0.0f;*/
+            /*float deltaJf2_desired = (t2EffectiveMass > 0.00001f) ? -velocityAlongT2 / t2EffectiveMass : 0.0f;*/
+            /**/
+            /*float tangent1Impulse = std::max(collision.tangent1Impulse[i] + deltaJf1_desired, 0.f);;*/
+            /*deltaJf1_desired = tangent1Impulse - collision.tangent1Impulse[i];*/
+            /*collision.tangent1Impulse[i] = tangent1Impulse;*/
+            /**/
+            /*float tangent2Impulse = std::max(collision.tangent2Impulse[i] + deltaJf2_desired, 0.f);;*/
+            /*deltaJf2_desired = tangent2Impulse - collision.tangent2Impulse[i];*/
+            /*collision.tangent2Impulse[i] = tangent2Impulse;*/
+            /**/
+            /*glm::vec3 impulseVecF1 = collision.manifold.tangent.vec1 * deltaJf1_desired;*/
+            /*glm::vec3 impulseVecF2 = collision.manifold.tangent.vec2 * deltaJf2_desired;*/
+            /*glm::vec3 totalFrictionImpulseVec = impulseVecF1 + impulseVecF2;*/
+            /**/
+            /*float coeffictionOfFriction = 0.03f;*/
+
+            //rb->addForceAtPoint(totalFrictionImpulseVec * coeffictionOfFriction, point.position, Components::ForceMode::Impulse);
+        }
+
+
+
+        // contact constraint
+        {
+            float separatingVelocity = glm::dot(collision.manifold.normal, relativeVelocity);
+            if (separatingVelocity > 0.0f) continue;;
+            std::cout << "separating velocity " << separatingVelocity << std::endl;;
+            std::cout << "relative velocity " << relativeVelocity.y << std::endl;;
+
+            float baumgarteFactor = 0.2f;
+            float baumgarteImpulse = baumgarteFactor * collision.manifold.penetration / dt;
+
+            float bounciness = 0.5f;
+            float desiredVelocity = (-(1.0f + bounciness) * separatingVelocity) + baumgarteImpulse;
+            float lambda = desiredVelocity * preStep.normalEffectiveMass[i];
+
+            float newImpulse = std::max(collision.normalImpulse + lambda, 0.f);;
+            lambda = newImpulse - collision.normalImpulse;
+            collision.normalImpulse = newImpulse;
+
+            rb->addForceAtPoint(collision.manifold.normal * lambda, collision.manifold.points[i].position, Components::ForceMode::Impulse);
+
+        }
+
+    }
+
+    std::cout << std::endl;
 }
 
 void solveCollisionBothRb(Collision& collision) {
-
 }
 
 
-void solveCollision(std::vector<Collision>& collisions) {
-    for (auto collision : collisions) {
-        glm::vec3 delta = collision.manifold.normal * collision.manifold.points[0].Penetration;
-        if (collision.objA.rigidBody.has_value() && collision.objB.rigidBody.has_value()) {
-            solveCollisionBothRb(collision);
-            continue;
-        }
-        if (collision.objA.rigidBody.has_value() || collision.objB.rigidBody.has_value()) {
-            solveCollisionOneRb(collision);
-            continue;
+void solveCollision(std::vector<Collision>& collisions, float dt) {
+    const int nbIteration = 3;
+    for (int iteration=0;iteration<nbIteration;iteration++){
+        for (Collision& collision : collisions) {
+            if (collision.objA.rigidBody.has_value() || collision.objB.rigidBody.has_value()) {
+                if (collision.objB.rigidBody.has_value()) {
+                    std::swap(collision.objA, collision.objB);
+                    collision.manifold.normal *= -1.0f;
+                }
+
+
+                if (iteration == 0) {
+                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody->lock().get(), nullptr, collision.manifold);
+                }
+
+                solveCollisionOneRb(collision, dt);
+            }
+
+
+            if (collision.objA.rigidBody.has_value() && collision.objB.rigidBody.has_value()) {
+                if (iteration == 0) {
+                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody->lock().get(), nullptr, collision.manifold);
+                }
+
+                solveCollisionBothRb(collision);
+                continue;
+            }
         }
     }
 }

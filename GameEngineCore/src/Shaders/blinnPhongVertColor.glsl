@@ -49,5 +49,7 @@ void main() {
     vec4 viewPos = ubo.view * worldPos;
     gl_Position = ubo.proj * viewPos;
     outVertPos = viewPos;
-    outNormal = vec4(inNormal, 1.0);
+    mat3 normalMatrix = mat3(transpose(inverse(modelUbo.model)));
+    vec3 rotatedNormal = normalize(normalMatrix * inNormal);
+    outNormal = vec4(rotatedNormal, 0.0);
 }

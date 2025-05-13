@@ -11,8 +11,8 @@
 namespace Engine {
 namespace Components {
 
-MeshRenderer::MeshRenderer(std::shared_ptr<Ressources::Material> material, std::unique_ptr<Ressources::VertexBuffer> vertexBuffer, std::unique_ptr<Ressources::IndexBuffer> indexBuffer)
-: Renderer(material), m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer))
+MeshRenderer::MeshRenderer(std::shared_ptr<Ressources::Material> material, std::shared_ptr<Ressources::Mesh> mesh)
+: Renderer(material), m_mesh(mesh)
 {
 }
 
@@ -32,12 +32,8 @@ void MeshRenderer::render(Engine::Renderer::Renderer::FrameInfo& frameInfo) {
     m_material->bindDescriptorSet(frameInfo);
 
     // Bind vertex and index buffers
-    VkBuffer vertexBuffers[] = {m_vertexBuffer->getBuffer()};
-    VkDeviceSize offsets[] = {0};
-    api.cmdBindVertexBuffers(frameInfo.commandBuffer, 0, 1, vertexBuffers, offsets);
-    api.cmdBindIndexBuffer(frameInfo.commandBuffer, m_indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
-
-    api.cmdDrawIndexed(frameInfo.commandBuffer, m_indexBuffer->indexCount, 1, 0, 0, 0);
+    m_mesh->bind(frameInfo);
+    m_mesh->draw(frameInfo);
 }
 
 

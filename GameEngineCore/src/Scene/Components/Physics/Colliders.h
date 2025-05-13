@@ -3,7 +3,9 @@
 #include "../Component.h"
 #include "../Transform.h"
 #include <array>
+#include <cstdint>
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace Engine {
 namespace Components {
@@ -14,11 +16,30 @@ enum ColliderType {
     Capsule
 };
 
+struct Face {
+    std::vector<uint32_t> vertexIndices;
+    glm::vec3 normal;
+
+    std::vector<glm::vec3> getVertices(const std::vector<glm::vec3> vertices) {
+        std::vector<glm::vec3> output;
+        for (auto idx : vertexIndices) {
+            output.push_back(vertices[idx]);
+        }
+        return std::move(output);
+    }
+};
+
+struct Polyhedron {
+    std::vector<glm::vec3> vertices;
+    std::vector<Face> faces;
+};
+
 struct Collider : Component {
     Collider(ColliderType type):Component(), type(type) {};
     ColliderType type;
 
     virtual glm::vec3 findFurthestPoint(glm::vec3 dir)const =0;
+    virtual Polyhedron getPolyhedron() const{};
 };
 
 struct CubeCollider : Collider {
@@ -27,6 +48,7 @@ struct CubeCollider : Collider {
     glm::vec3 getWorldCenter() const;
 
     glm::vec3 findFurthestPoint(glm::vec3 dir) const override;
+    Polyhedron getPolyhedron() const override;
 
     std::vector<glm::vec3> getAllVertices() const;
 private:

@@ -84,6 +84,13 @@ FetchContent_Declare(
     GIT_TAG master
 )
 
+FetchContent_Declare(
+    tiny_obj_loader
+    GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader
+    GIT_TAG release
+)
+
+
 # Configure GLFW options
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -95,7 +102,7 @@ set(SPIRV_REFLECT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_EXECUTABLE OFF CACHE BOOL "" FORCE)
 set(SPIRV_REFLECT_STATIC_LIB ON CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(glfw glm SPIRV-Reflect stb_image)
+FetchContent_MakeAvailable(glfw glm SPIRV-Reflect stb_image tiny_obj_loader)
 
 # Add main projects
 add_subdirectory(GameEngineCore)

@@ -2,6 +2,9 @@
 #include "Input.h"
 #include "Scene/Components/Transform.h"
 #include "Scene/Entities/Entity.h"
+#include "glm/fwd.hpp"
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
 #include <iostream>
 #include <cmath>
 #include <chrono>
@@ -11,7 +14,7 @@ namespace Game {
 namespace Components {
 
 CameraMovement::CameraMovement()
-: Component(), startTime(std::chrono::high_resolution_clock::now()) {
+: Component(), m_startTime(std::chrono::high_resolution_clock::now()) {
 }
 
 void CameraMovement::update(float dt) {
@@ -21,25 +24,26 @@ void CameraMovement::update(float dt) {
     
     // Handle mouse rotation
     glm::vec2 mouseDelta = input.getMouseDelta();
-    std::cout << "x " << mouseDelta.x << " y " << mouseDelta.y << std::endl;
-    yaw += mouseDelta.x * -1 * mouseSensitivity;
-    pitch -= mouseDelta.y * -1 * mouseSensitivity; // Inverted Y for natural camera feel
-    
-    // Clamp pitch to avoid camera flipping
-    pitch = glm::clamp(pitch, -glm::half_pi<float>() * 0.99f, glm::half_pi<float>() * 0.99f);
-    
-    // Calculate new forward direction
-    glm::vec3 forward;
+    float yaw = mouseDelta.x * mouseSensitivity;
+    float pitch = mouseDelta.y * mouseSensitivity;
 
-    //forward.x = self.angles[1].sin();
-    forward.x += sin(yaw);
-    forward.y += sin(pitch) * cos(yaw);
-    forward.y = 0;
-    forward.z += cos(pitch) * cos(yaw);
+    if (std::abs(yaw) > 1e-6f) { // Check for non-zero rotation
+        glm::quat yawRotation = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+        transform->rotation = yawRotation * transform->rotation;
+    }
 
-    //forward = transform->getForwardVector();
-    // Update camera orientation
-    transform->setForwardVector(forward);
+    // 2. Apply Pitch rotation (around local X-axis)
+    // To rotate around the local X-axis, we post-multiply by the pitch quaternion.
+    if (std::abs(pitch) > 1e-6f) { // Check for non-zero rotation
+        glm::quat pitchRotation = glm::angleAxis(pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+        transform->rotation = transform->rotation * pitchRotation;
+    }
+    
+    /*euler[1] = sin(m_angle[1]);*/
+    /*euler[2] = sin(m_angle[0]) * cos(m_angle[1]);*/
+    /*euler[0] = cos(m_angle[0]) * cos(m_angle[1]);*/
+    /**/
+    /*transform->rotation = glm::quat(euler);*/
 
     // Handle movement
     glm::vec3 delta = glm::vec3(0.0);
@@ -63,22 +67,10 @@ void CameraMovement::update(float dt) {
         delta.y -= 1.0;
     }
 
-    // Get the camera's orientation vectors
 
-        /*let right = forward.cross(Vec3::new(0.0, 1.0, 0.0));*/
-        /*let up = right.cross(forward);*/
-
-    glm::vec3 right = glm::cross(forward, glm::vec3(0.0, 1.0, 0.0));
-    glm::vec3 up = glm::cross(right, forward);
-    /*glm::vec3 right = transform->getRightVector();*/
-    /*glm::vec3 up = transform->getUpVector();*/
-
-
-    std::cout << "forward 2" << std::endl;
-    std::cout << forward.x << " ";
-    std::cout << forward.y << " ";
-    std::cout << forward.z << std::endl;
-    
+    glm::vec3 forward = transform->getForwardVector();
+    glm::vec3 right = transform->getRightVector();
+    glm::vec3 up = transform->getUpVector();
 
     // Apply movement in camera-relative directions
     if (delta != glm::vec3(0.0)) {
@@ -87,7 +79,7 @@ void CameraMovement::update(float dt) {
 }
 
 void CameraMovement::start() {
-    startTime = std::chrono::high_resolution_clock::now();
+    m_startTime = std::chrono::high_resolution_clock::now();
 }
 
 }

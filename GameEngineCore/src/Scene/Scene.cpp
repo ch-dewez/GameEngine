@@ -18,6 +18,7 @@ void Scene::updateComponents(float dt) {
 }
 
 void Scene::addEntity(std::shared_ptr<Entity> entity) {
+    entity->setScene(this);
     m_entities.push_back(entity);
 };
 
