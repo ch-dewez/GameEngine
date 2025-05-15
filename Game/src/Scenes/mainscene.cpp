@@ -1,22 +1,9 @@
 #include "mainscene.h"
-#include "Scene/Entities/Entity.h"
-#include "Scene/Entities/Camera.h"
 #include "../Components/CameraMovement.h"
 #include "../Components/BoxMovement.h"
-#include "Scene/Components/Transform.h"
-#include "Scene/Components/MeshRenderer.h"
-#include "Ressources/RessourceManager.h"
-#include "Ressources/Pipeline.h"
-#include "Ressources/Vertex.h"
-#include "Ressources/Material.h"
 #include "../Materials/defaultMaterial.h"
 #include <memory>
 #include <vector>
-#include "Scene/Components/DirectionalLight.h"
-#include "Scene/Components/PointLight.h"
-#include "vulkan/vulkan_core.h"
-#include "Scene/Components/Physics/Colliders.h"
-#include "Scene/Components/Physics/RigidBody.h"
 
 namespace Game {
 
@@ -174,7 +161,7 @@ void MainScene::initialize(){
     auto mat = std::make_shared<Engine::Ressources::Material>(blinnPhongColorTemplate, sizeof(Material::blinnPhongColor));
     ressourceManager.loadMaterial("mat", mat);
     auto defaultMat = Material::blinnPhongColor();
-    defaultMat.diffuse = glm::vec3(1.0, 1.0, 1.0);
+    defaultMat.diffuse = glm::vec3(1.0, .7, 0.3);
     defaultMat.shininess = 1.0;
     mat->updateData(&defaultMat);
 
@@ -210,7 +197,7 @@ void MainScene::initialize(){
 
         std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
 
-        transform->position.y -= 1.5;
+        //transform->position.y -= 1.5;
 
         std::shared_ptr<Components::BoxMovement> boxMOvement (new Components::BoxMovement());
         glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform->scale.x, transform->scale.y, transform->scale.z);
@@ -269,8 +256,8 @@ void MainScene::initialize(){
         transform->position.y -= 3.0;
 
         transform->scale.y = 0.01;
-        transform->scale.x = 10.0;
-        transform->scale.z = 10.0;
+        transform->scale.x = 100.0;
+        transform->scale.z = 100.0;
         //transform->setForwardVector(glm::vec3(1.0, -0.1, 0.0f));
     }
 

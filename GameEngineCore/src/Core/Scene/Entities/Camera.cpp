@@ -1,0 +1,30 @@
+#include "Camera.h"
+#include "Core/Scene/Components/Camera.h"
+#include "Core/Scene/Components/Transform.h"
+#include <iostream>
+#include <memory>
+
+
+namespace Engine {
+namespace Entities {
+
+void Camera::load() {
+    std::shared_ptr<Components::Transform> transform = std::make_shared<Components::Transform>();
+    
+    // Set initial camera position and orientation
+    transform->position = glm::vec3(0.0f, 0.0f, 3.0f);  // Move camera back 3 units
+    transform->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);  // Identity rotation
+    transform->setForwardVector(glm::vec3{0.0f, 0.0f, -1.0f});
+    transform->scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    
+    addComponent(transform);
+
+    std::shared_ptr<Components::Camera> cameraComponent = std::make_shared<Components::Camera>();
+    addComponent(cameraComponent);
+
+    tags.push_back("Main Camera");
+}
+
+}
+}
+

@@ -28,6 +28,7 @@ target_compile_definitions(GameEngineCore
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG>
         $<$<CONFIG:Release>:NDEBUG>
+        ENGINE_BUILD
 )
 
 target_include_directories(GameEngineCore

@@ -1,6 +1,4 @@
 #include "BoxMovement.h"
-#include "Scene/Components/Transform.h"
-#include "Scene/Entities/Entity.h"
 #include <iostream>
 #include <cmath>
 #include <chrono>

@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene/Components/Component.h"
+#include "GameEngine.h"
 #include <chrono>
 
 namespace Game {

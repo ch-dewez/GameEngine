@@ -1,7 +1,4 @@
 #include "CameraMovement.h"
-#include "Input.h"
-#include "Scene/Components/Transform.h"
-#include "Scene/Entities/Entity.h"
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/quaternion.hpp"

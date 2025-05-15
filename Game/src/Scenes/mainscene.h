@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene/Scene.h"
+#include "GameEngine.h"
 
 namespace Game {
 

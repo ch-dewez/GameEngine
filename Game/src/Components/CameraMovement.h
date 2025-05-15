@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene/Components/Component.h"
+#include "GameEngine.h"
 #include <chrono>
 #include <glm/glm.hpp>
 
@@ -12,7 +12,7 @@ public:
     void update(float dt) override;
     void start() override;
 
-    float speed = 0.1;
+    float speed = 0.2;
     float mouseSensitivity = 0.002f;
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_startTime;
