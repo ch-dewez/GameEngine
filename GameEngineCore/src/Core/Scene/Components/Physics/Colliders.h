@@ -43,7 +43,8 @@ struct Collider : Component {
 };
 
 struct CubeCollider : Collider {
-    CubeCollider() : Collider(ColliderType::Cube){};
+    CubeCollider() : Collider(ColliderType::Cube){
+    };
 
     glm::vec3 getWorldCenter() const;
 
@@ -51,7 +52,7 @@ struct CubeCollider : Collider {
     Polyhedron getPolyhedron() const override;
 
     std::vector<glm::vec3> getAllVertices() const;
-private:
+public:
     glm::vec3 center = glm::vec3(0.0f);
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -64,7 +65,8 @@ private:
 };
 
 struct SphereCollider: Collider {
-    SphereCollider() : Collider(ColliderType::Sphere){};
+    SphereCollider() : Collider(ColliderType::Sphere){
+    };
     glm::vec3 getWorldCenter() const;
     float getRadius() const;
 
@@ -75,7 +77,8 @@ private:
 };
 
 struct CapsuleCollider: Collider {
-    CapsuleCollider() : Collider(ColliderType::Capsule){};
+    CapsuleCollider() : Collider(ColliderType::Capsule){
+    };
     glm::vec3 getWorldCenter1() const;
     glm::vec3 getWorldCenter2() const;
 

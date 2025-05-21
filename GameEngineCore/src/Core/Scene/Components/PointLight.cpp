@@ -1,7 +1,7 @@
 #include "PointLight.h"
 
 namespace Engine {
-namespace Components {
+namespace Components {
 
 PointLight::PointLight()
 {

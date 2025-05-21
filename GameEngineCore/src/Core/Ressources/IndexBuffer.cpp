@@ -10,7 +10,7 @@ namespace Engine {
 namespace Ressources {
 
 IndexBuffer::IndexBuffer(void* data, size_t size, int indexCount)
-    : Buffer(1), indexCount(indexCount)
+    : Buffer(size, 1), indexCount(indexCount)
 {
     createBuffer(data, size);
 }

@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Core/Scene/Entities/Entity.h"
 #include "Core/Scene/Components/Renderer.h"
+//TODO: remove this
+#include "Core/Scene/Components/MeshRenderer.h"
 #include "Core/Scene/Components/Camera.h"
 #include "Core/Renderer/Lights.h"
 #include "Core/Scene/Components/PointLight.h"
@@ -46,7 +48,8 @@ DefaultRenderer::DefaultRenderer()
         descriptorBuilder
             .bind_buffer(0, &globalBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
             .bind_buffer(1, &lightsBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
-        m_globalDescriptorSets[i] = descriptorBuilder.build(&globalDescriptorLayout);
+        /*m_globalDescriptorSets[i] = descriptorBuilder.build(&globalDescriptorLayout);*/
+        m_globalDescriptorSets[i] = descriptorBuilder.build();
 
         // Set up model descriptor sets with dynamic uniform buffer
         VkDescriptorBufferInfo modelBufferInfo{};
@@ -57,7 +60,8 @@ DefaultRenderer::DefaultRenderer()
         descriptorBuilder = Engine::Ressources::DescriptorBuilder();
         descriptorBuilder
             .bind_buffer(0, &modelBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
-        m_modelDescriptorSets[i] = descriptorBuilder.build(&modelDescriptorLayout);
+        /*m_modelDescriptorSets[i] = descriptorBuilder.build(&modelDescriptorLayout);*/
+        m_modelDescriptorSets[i] = descriptorBuilder.build();
     }
 }
 
@@ -98,7 +102,7 @@ void DefaultRenderer::render(Engine::Scene& scene) {
 
     GlobalUniformBufferObject ubo{};
     {
-        std::shared_ptr<Engine::Components::Camera> camera = scene.getEntityByTag("Main Camera").value().lock()->getComponent<Engine::Components::Camera>().value().lock();
+        Engine::Components::Camera* camera = scene.getEntityByTag("Main Camera").value()->getComponent<Engine::Components::Camera>().value();
         ubo.view = camera->getViewMatrix();
         auto swapChainExtent = VulkanApi::Instance().getSwapChainExtent();
         ubo.proj = camera->getProjectionMatrix(swapChainExtent.width / (float)swapChainExtent.height);
@@ -110,30 +114,30 @@ void DefaultRenderer::render(Engine::Scene& scene) {
     // Get the pipeline layout from the first renderer component we find
     // since all pipelines should share the same global descriptor set layout
     VkPipelineLayout* pipelineLayout = nullptr;
-    for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
-        auto component = entity->getComponent<Engine::Components::Renderer>().value().lock();
-        pipelineLayout = &component->getMaterial().lock()->getMaterialTemplate()->getPipeline()->getPipelineLayout();
-        break;
+    auto rendererComponents = scene.getComponentsRigistry().getAllElementOfType<Components::Renderer>();
+    if (rendererComponents.size() <= 0){
+        endRenderPass();
+        endFrame();
+        return;
     }
+    pipelineLayout = &rendererComponents[0]->getMaterial().lock()->getMaterialTemplate()->getPipeline()->getPipelineLayout();
 
 
     // get all the lights
     LightEnvironment lightEnvironment;
     int pointLightIndex = 0;
     int directionalLightIndex = 0;
-    for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
-        auto pointLights = entity->getComponents<Engine::Components::PointLight>();
 
-        for (auto pointLight : pointLights) {
-            lightEnvironment.pointLights[pointLightIndex] = pointLight.lock()->lightInfo;
-            pointLightIndex ++;
-        }
-
-        auto directionalLights = entity->getComponents<Engine::Components::DirectionalLight>();
-        for (auto directionalLight : directionalLights) {
-            lightEnvironment.directionalLights[directionalLightIndex] = directionalLight.lock()->lightInfo;
-            directionalLightIndex ++;
-        }
+    auto& pointLights = scene.getComponents<Components::PointLight>();
+    for (auto& pointLight : pointLights){
+        lightEnvironment.pointLights[pointLightIndex] = pointLight.lightInfo;
+        pointLightIndex ++;
+    }
+    
+    auto& dirLights = scene.getComponents<Components::DirectionalLight>();
+    for (auto& dirLight : dirLights){
+        lightEnvironment.directionalLights[directionalLightIndex] = dirLight.lightInfo;
+        directionalLightIndex ++;
     }
 
     lightEnvironment.nbDirectionalLight = directionalLightIndex;
@@ -160,16 +164,12 @@ void DefaultRenderer::render(Engine::Scene& scene) {
     m_frameInfo.modelsBuffer = m_modelUniformBuffer.get();
 
     // Group renderers by material template
-    std::map<Engine::Ressources::MaterialTemplate*, std::vector<std::shared_ptr<Engine::Components::Renderer>>> renderGroups;
+    std::map<Engine::Ressources::MaterialTemplate*, std::vector<Engine::Components::Renderer*>> renderGroups;
     
-    for (std::shared_ptr<Engine::Entity> entity : scene.getAllEntities()) {
-        auto components = entity->getComponents<Engine::Components::Renderer>();
-        for (auto componentWeak : components) {
-            auto component = componentWeak.lock();
-            auto material = component->getMaterial().lock();
-            auto materialTemplate = material->getMaterialTemplate();
-            renderGroups[materialTemplate].push_back(component);
-        }
+    for (Components::Renderer* component : rendererComponents) {
+        auto material = component->getMaterial().lock();
+        auto materialTemplate = material->getMaterialTemplate();
+        renderGroups[materialTemplate].push_back(component);
     }
     
     // Render each group

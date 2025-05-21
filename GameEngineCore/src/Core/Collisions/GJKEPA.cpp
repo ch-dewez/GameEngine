@@ -581,7 +581,7 @@ ContactManifold
 generateContactManifoldAfterEPA(const Components::Collider &colliderA,
                                 const Components::Collider &colliderB,
                                 glm::vec3 normal, float penetration) {
-    if ((colliderA.m_entity->name == "second entity" || colliderB.m_entity->name == "second entity") && colliderA.m_entity->name != "plane" && colliderB.m_entity->name != "plane"){
+    if ((colliderA.m_entity->name == "second entity" || colliderB.m_entity->name == "second entity") && colliderA.m_entity->name != "plane" && colliderB.m_entity->name != "plane"){
         
     }
   Components::Polyhedron polyhedronA;

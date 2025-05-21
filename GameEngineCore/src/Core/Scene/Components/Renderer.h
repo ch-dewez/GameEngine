@@ -15,7 +15,7 @@ public:
     static void SetModelBufferDeallocator(std::function<void(uint32_t)> deallocator);
     
     Renderer(std::shared_ptr<Ressources::Material> material); 
-    virtual ~Renderer();  // Changed from =default to explicit declaration
+    virtual ~Renderer();
 
     void update(float dt) override {};
     void start() override {};

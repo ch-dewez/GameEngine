@@ -2,34 +2,35 @@
 #include <limits>
 #include <memory>
 #include <iostream>
+#include "Core/Log/Log.h"
 
 namespace Engine {
 namespace Components {
 
 glm::vec3 SphereCollider::getWorldCenter() const {
-    return m_entity->getComponent<Transform>().value().lock().get()->position + center;
+    return m_entity->getComponent<Transform>().value()->position + center;
 }
 
 glm::vec3 CubeCollider::getWorldCenter() const {
-    return m_entity->getComponent<Transform>().value().lock().get()->position + center;
+    return m_entity->getComponent<Transform>().value()->position + center;
 }
 
 
 glm::vec3 CapsuleCollider::getWorldCenter1() const{
-    return m_entity->getComponent<Transform>().value().lock().get()->position + center;
+    return m_entity->getComponent<Transform>().value()->position + center;
 };
 
 glm::vec3 CapsuleCollider::getWorldCenter2() const{
 
-    return m_entity->getComponent<Transform>().value().lock().get()->position + center2;
+    return m_entity->getComponent<Transform>().value()->position + center2;
 };
 
 float SphereCollider::getRadius() const {
-    return radius * m_entity->getComponent<Transform>().value().lock().get()->scale.x;
+    return radius * m_entity->getComponent<Transform>().value()->scale.x;
 }
 
 float CapsuleCollider::getRadius() const {
-    return radius * m_entity->getComponent<Transform>().value().lock().get()->scale.x;
+    return radius * m_entity->getComponent<Transform>().value()->scale.x;
 }
 
 glm::vec3 CapsuleCollider::findFurthestPoint(glm::vec3 dir) const{
@@ -71,10 +72,7 @@ glm::vec3 calculateFaceNormal(
     const std::vector<uint32_t>& faceIndices,
     const std::vector<glm::vec3>& polyVertices) {
     // Ensure we have enough vertices to define a plane/normal
-    if (faceIndices.size() < 3) {
-        throw std::runtime_error("Face has fewer than 3 vertices, cannot calculate normal.");
-        // Or return a zero vector: return glm::vec3(0.0f);
-    }
+    Assert(faceIndices.size() >= 3, "Face has fewer than 3 vertices, cannot calculate normal.");
 
     // Get the positions of the first three vertices
     const glm::vec3& v0 = polyVertices[faceIndices[0]];
@@ -93,11 +91,7 @@ glm::vec3 calculateFaceNormal(
     float normalLengthSq = glm::dot(rawNormal, rawNormal);
     constexpr float epsilonSq = 1e-12f; // Tolerance for zero length squared
 
-    if (normalLengthSq < epsilonSq) {
-        // Vertices are collinear or coincident.
-        throw std::runtime_error("Face vertices are collinear, cannot calculate normal.");
-        // Or return a zero vector: return glm::vec3(0.0f);
-    }
+    Assert(normalLengthSq >= epsilonSq, "Face vertices are collinear, cannot calculate normal.");
 
     // Normalize the normal vector and return it
     // return rawNormal / glm::sqrt(normalLengthSq); // Manual normalize
@@ -138,15 +132,7 @@ Polyhedron CubeCollider::getPolyhedron() const {
 
     // 3. Calculate Plane and Normal for each face
     for (Face& face : cubePolyhedron.faces) {
-        try {
-            face.normal = calculateFaceNormal(face.vertexIndices, cubePolyhedron.vertices); // Store normal separately too
-        } catch (const std::runtime_error& e) {
-            // Handle degenerate face (shouldn't happen for a non-zero size cube)
-            // Log error, mark face as invalid, etc.
-            face.normal = glm::vec3(0.0f);
-            // Consider re-throwing or logging:
-            // std::cerr << "Warning: Could not calculate plane for cube face: " << e.what() << std::endl;
-        }
+        face.normal = calculateFaceNormal(face.vertexIndices, cubePolyhedron.vertices); // Store normal separately too
     }
 
     return cubePolyhedron;
@@ -174,7 +160,7 @@ std::vector<glm::vec3> CubeCollider::getAllVertices() const{
     // backward down left
     result[7] = -forwardAndSize - upAndSize - rightAndSize + center;
 
-    auto model = m_entity->getComponent<Transform>().value().lock()->getModelMatrix();
+    auto model = m_entity->getComponent<Transform>().value()->getModelMatrix();
     for (int i = 0;i<result.size();i++) {
         result[i] = model * glm::vec4(result[i], 1.0f);
     }

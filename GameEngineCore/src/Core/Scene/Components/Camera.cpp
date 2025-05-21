@@ -9,7 +9,7 @@ namespace Engine {
 namespace Components {
 
 glm::mat4 Camera::getViewMatrix(glm::vec3 up) {
-    auto transform = m_entity->getComponent<Transform>().value().lock();
+    auto transform = m_entity->getComponent<Transform>().value();
 
     // Calculate camera position and target
     glm::vec3 position = transform->position;

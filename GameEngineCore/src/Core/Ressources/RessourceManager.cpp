@@ -28,10 +28,20 @@ void RessourceManager::Shutdown() {
 RessourceManager::RessourceManager () {
 }
 
+RessourceManager::~RessourceManager(){
+    clearAll();
+}
+
 
 void RessourceManager::clearAll() {
+    LogDebug("clear all ressources");
+    for (auto& mesh : m_meshes){
+        LogDebug(mesh.second.use_count());
+    }
+    m_meshes.clear();
     m_textures.clear();
     m_materials.clear();
+    m_materialsTemplate.clear();
     m_pipelines.clear();
 }
 
@@ -145,7 +155,7 @@ std::shared_ptr<Mesh> RessourceManager::loadOrGetMesh(const std::string& key, st
 /*    return texture;*/
 /*};*/
 /**/
-/*std::shared_ptr<MaterialTemplate> RessourceManager::createMaterialTemplate(const std::string& key, std::shared_ptr<Pipeline> pipeline) {*/
+/*std::shared_ptr<MaterialTemplate> RessourceManager::createMaterialTemplate(const std::string& key, std::shared_ptr<Pipeline> pipeline) {*/
 /*    auto existing = m_materialsTemplate.find(key);*/
 /*    if (existing != m_materialsTemplate.end()) */
 /*        return existing->second;*/

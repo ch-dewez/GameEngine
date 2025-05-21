@@ -1,4 +1,7 @@
 #include "Scene.h"
+#include "Components/MeshRenderer.h"
+#include "Components/Physics/Colliders.h"
+#include "Components/Renderer.h"
 #include "Core/Scene/Entities/Entity.h"
 #include "Components/Component.h"
 #include <memory>
@@ -11,64 +14,95 @@
 //};
 
 namespace Engine {
+
+Scene::Scene(){
+}
+
+void Scene::initialize(){
+    initObject();
+    m_isFullyInitialised = true;
+    callStart();
+}
+
+void Scene::callStart(){
+    auto& allComponentsArrays = m_components.getAllArrays();
+    for (auto& array : allComponentsArrays){
+        auto* staticArrayBase = array.second;
+        Assert(staticArrayBase != nullptr, "StaticArray base pointer is null");
+        auto* staticArray = static_cast<Utils::StaticArray<Components::Component>*>(staticArrayBase);
+        for (auto& component : *staticArray){
+            component.start();
+        }
+    }
+};
+
 void Scene::updateComponents(float dt) {
-    for (auto entity : m_entities) {
-        entity->updateComponents(dt);
+    auto& allComponentsArrays = m_components.getAllArrays();
+    for (auto& array : allComponentsArrays){
+        auto* staticArrayBase = array.second;
+        Assert(staticArrayBase != nullptr, "StaticArray base pointer is null");
+        auto* staticArray = static_cast<Utils::StaticArray<Components::Component>*>(staticArrayBase);
+        for (auto& component : *staticArray){
+            component.update(dt);
+        }
     }
 }
 
-void Scene::addEntity(std::shared_ptr<Entity> entity) {
-    entity->setScene(this);
-    m_entities.push_back(entity);
-};
 
 void Scene::removeEntity(UUID id) {
-    for (int i=0;i<m_entities.size();i++) {
-        std::shared_ptr<Entity> entity = m_entities[i];
-        if (entity->uuid == id) {
-            m_entities.erase(m_entities.begin() + i);
-        }
+    m_entities.filterFirst([&](Entity& element) {return element.uuid == id;});
+    auto& allComponentsArrays = m_components.getAllArrays();
+    for (auto& array : allComponentsArrays){
+        auto* staticArrayBase = array.second;
+        Assert(staticArrayBase != nullptr, "StaticArray base pointer is null");
+        auto* staticArray = static_cast<Utils::StaticArray<Components::Component>*>(staticArrayBase);
+        staticArray->filter([&](Components::Component& component){return component.m_entity->uuid == id;});
     }
 };
 
-std::optional<std::weak_ptr<Entity>> Scene::getEntityById(UUID id){
-    for (int i=0;i<m_entities.size();i++) {
-        std::shared_ptr<Entity> entity = m_entities[i];
-        if (entity->uuid == id) {
-            return entity; 
-        }
-    }
-    return {};
-};
-
-
-std::optional<std::weak_ptr<Entity>> Scene::getEntityByTag(char* tag){
-    for (int i=0;i<m_entities.size();i++) {
-        std::shared_ptr<Entity> entity = m_entities[i];
-        for (int j=0;j<entity->tags.size();j++) {
-            const std::string& entityTag = entity->tags[j];
-            if (tag == entityTag) {
-                return entity; 
-            }
-        }
-    }
+std::optional<Entity*> Scene::getEntityById(UUID id){
+    auto result = m_entities.getFirstMatch([&](Entity& entity) {
+        return entity.uuid == id;
+    });
     
-    return {};
-};
-
-
-std::optional<std::weak_ptr<Entity>> Scene::getEntityByName(char* name){
-    for (int i=0;i<m_entities.size();i++) {
-        std::shared_ptr<Entity> entity = m_entities[i];
-        if (entity->name == name) {
-            return entity; 
-        }
+    if (result.has_value()) {
+        return result.value();
     }
+    return std::nullopt;
+}
 
-    return {};
-};
+
+std::optional<Entity*> Scene::getEntityByTag(char* tag){
+    auto result = m_entities.getFirstMatch([&](Entity& entity) {
+        for (auto& string : entity.tags){
+            if (string == tag){
+                return true;
+            };
+        }
+        return false;
+    });
+    
+    if (result.has_value()) {
+        return result.value();
+    }
+    return std::nullopt;
+}
+
+
+std::optional<Entity*> Scene::getEntityByName(char* name){
+    auto result = m_entities.getFirstMatch([&](Entity& entity) {
+        return entity.name == name;
+    });
+    
+    if (result.has_value()) {
+        return result.value();
+    }
+    return std::nullopt;
+}
 
 }
+
+
 
 
 

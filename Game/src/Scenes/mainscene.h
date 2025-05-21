@@ -7,7 +7,7 @@ class MainScene : public Engine::Scene {
 public:
     MainScene() = default;
     ~MainScene() = default;
-    void initialize() override;
+    void initObject() override;
 };
 
 } // namespace Game

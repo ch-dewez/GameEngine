@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <string_view>
 
 namespace Engine {
 namespace Renderer {
@@ -57,7 +58,6 @@ void VulkanApi::shutDownVulkan() {
     delete m_depthBuffer;
 
     vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-
     
     vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 

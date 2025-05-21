@@ -11,7 +11,7 @@ BoxMovement::BoxMovement()
 }
 
 void BoxMovement::update(float dt) {
-    auto transform = m_entity->getComponent<Engine::Components::Transform>().value().lock();
+    auto transform = m_entity->getComponent<Engine::Components::Transform>().value();
     // Calculate elapsed time in seconds
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float>(currentTime - startTime).count();

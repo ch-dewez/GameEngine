@@ -14,6 +14,7 @@ namespace Ressources {
 class RessourceManager {
 public:
   RessourceManager();
+  ~RessourceManager();
   static void Init();
   static RessourceManager& getInstance();
   static void Shutdown();

@@ -1,7 +1,6 @@
 #include "Renderer.h"
 #include "Core/Ressources/DescriptorsManager.h"
-#include "Core/Scene/Entities/Entity.h"
-#include <stdexcept>
+#include "Core/Log/Log.h"
 
 namespace Engine{
 namespace Components {
@@ -20,17 +19,15 @@ void Renderer::SetModelBufferDeallocator(std::function<void(uint32_t)> deallocat
 Renderer::Renderer(std::shared_ptr<Ressources::Material> material)
 : Component(), m_material(material)
 {
-    if (!s_modelBufferAllocator) {
-        throw std::runtime_error("Model buffer allocator not set. Call Renderer::SetModelBufferAllocator first.");
-    }
+    Assert(s_modelBufferAllocator, "Model buffer allocator not set. Call Renderer::SetModelBufferAllocator first.");
     m_modelBufferIndex = s_modelBufferAllocator();
 }
 
 Renderer::~Renderer() {
-    if (s_modelBufferDeallocator) {
-        s_modelBufferDeallocator(m_modelBufferIndex);
-    }
+    LogDebug("calling renderer deconstructor");
+    s_modelBufferDeallocator(m_modelBufferIndex);
 }
+
 }
 }
 

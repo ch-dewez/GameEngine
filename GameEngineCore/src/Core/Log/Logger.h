@@ -1,4 +1,8 @@
 #include <cstdio>
+#include <iostream>
+#include <sstream>
+#include "glm/gtx/io.hpp"
+
 namespace Engine {
 namespace Log {
 
@@ -16,23 +20,23 @@ public:
 
 
     template<typename... Args>
-    void Debug(const char* message, Args&& ... args){
-        Log(Priority::Debug, message, args...);
+    void Debug(Args&& ... args){
+        Log(Priority::Debug, args...);
     }
 
     template<typename... Args>
-    void Info(const char* message, Args&& ... args){
-        Log(Priority::Info, message, args...);
+    void Info(Args&& ... args){
+        Log(Priority::Info, args...);
     }
 
     template<typename... Args>
-    void Warn(const char* message, Args&& ... args){
-        Log(Priority::Warning, message, args...);
+    void Warn(Args&& ... args){
+        Log(Priority::Warning, args...);
     }
 
     template<typename... Args>
-    void Error(const char* message, Args&& ... args){
-        Log(Priority::Error, message, args...);
+    void Error(Args&& ... args){
+        Log(Priority::Error, args...);
     }
 
     void setStartingString(const char* string) {m_startingString = string;};
@@ -40,18 +44,25 @@ public:
     void resetColor();
 private:
     template<typename... Args>
-    void Log(Priority priority, const char* message, Args&& ... args){
+    void Log(Priority priority, Args&& ... args){
         if (priority < m_minimumPriority){
             return;
         }
+
+        std::ostringstream oss;
         
         setColor(priority);
+
         if (m_startingString) {
-            std::printf("%s ", m_startingString);
+            oss << m_startingString;
         }
-        std::printf("[%s] ", priorityToString(priority));
-        std::printf(message, args...);
-        std::printf("\n");
+
+        oss << " [" << priorityToString(priority) << "] ";
+
+        (oss << ... << args);   // fold‐expression: oss << a1 << a2 << …
+        oss << '\n';
+        std::cout << oss.str();
+
         resetColor();
     }
 

@@ -2,25 +2,27 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <memory>
 #include <optional>
+#include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "Core/Scene/Entities/Entity.h"
 #include "Core/Scene/Components/Physics/Colliders.h"
 #include "Core/Scene/Components/Physics/RigidBody.h"
 #include "glm/fwd.hpp"
+#include "Core/Log/Log.h"
 
 namespace Engine{
 namespace Collisions {
 
 
 struct Object {
-    std::shared_ptr<Entity> entity;
-    std::vector<std::shared_ptr<Components::Collider>> colliders;
-    std::shared_ptr<Components::Transform> transform;
-    std::optional<std::weak_ptr<Components::RigidBody>> rigidBody;
+    Entity* entity;
+    std::vector<Components::Collider*> colliders;
+    Components::Transform* transform;
+    std::optional<Components::RigidBody*> rigidBody;
 
     
 };
@@ -129,19 +131,44 @@ using FindContactFunc = ContactManifold(*)(const Components::Collider*,
 std::vector<Collision> detectCollisions(std::vector<Object>& objects);
 void solveCollision(std::vector<Collision>& collisions, float dt);
 
-void ManageCollision(Scene &scene, float dt) {
-    std::vector<Object> entities; // entity with colliders
-    for (auto entity : scene.getAllEntities()) {
-        auto collidersWeak = entity->getComponents<Components::Collider>();
-        if (collidersWeak.size() == 0)
-            continue;
 
-        std::vector<std::shared_ptr<Components::Collider>> colliders(collidersWeak.size());
-        for (int i = 0; i<collidersWeak.size();i++) {
-            colliders[i] = collidersWeak[i].lock();
+
+// TODO: Implement trigger
+void ManageCollision(Scene &scene, float dt) {
+    /*std::vector<Object> entities; // entity with colliders*/
+    /*for (auto entity : scene.getAllEntities()) {*/
+    /*    auto collidersWeak = entity->getComponents<Components::Collider>();*/
+    /*    if (collidersWeak.size() == 0)*/
+    /*        continue;*/
+    /**/
+    /*    std::vector<std::shared_ptr<Components::Collider>> colliders(collidersWeak.size());*/
+    /*    for (int i = 0; i<collidersWeak.size();i++) {*/
+    /*        colliders[i] = collidersWeak[i].lock();*/
+    /*    }*/
+    
+    /*    entities.push_back(Object(entity, std::move(colliders), entity->getComponent<Components::Transform>().value().lock(), entity->getComponent<Components::RigidBody>()));*/
+    /*}*/
+
+    std::vector<Components::Collider*> colliders = scene.getComponentsRigistry().getAllElementOfType<Engine::Components::Collider>();
+    std::unordered_map<Entity*, Object> entitiesMap;
+    for (Components::Collider* collider : colliders){
+        auto entity = collider->m_entity;
+        if (entitiesMap.contains(entity)){
+            entitiesMap[entity].colliders.push_back(collider);
         }
 
-        entities.push_back(Object(entity, std::move(colliders), entity->getComponent<Components::Transform>().value().lock(), entity->getComponent<Components::RigidBody>()));
+        Object object;
+        object.entity = entity;
+        object.colliders = {collider};
+        object.transform = entity->getComponent<Components::Transform>().value();
+        object.rigidBody = entity->getComponent<Components::RigidBody>();
+        entitiesMap[entity] = std::move(object);
+    }
+
+    std::vector<Object> entities;
+    entities.reserve(entitiesMap.size());
+    for (auto object : entitiesMap){
+        entities.push_back(std::move(object.second));
     }
 
     auto collisions = detectCollisions(entities);
@@ -268,19 +295,13 @@ std::vector<Collision> detectCollisions(std::vector<Object>& objects) {
         // we start at i+1 like that we only have unique pairs (if i then i==j and entity == entity)
         for (int j=i+1;j<objects.size();j++) {
             Object& b = objects[j];
-            // No response if none has rigidbody so no need to check them
-            if (!a.rigidBody.has_value() && !b.rigidBody.has_value()){
-                continue;
-            }
-            for (std::shared_ptr<Components::Collider> colliderA : a.colliders)
-            for (std::shared_ptr<Components::Collider> colliderB : b.colliders) {
+            for (Components::Collider* colliderA : a.colliders)
+            for (Components::Collider* colliderB : b.colliders) {
 
-                ContactManifold manifold = findCollision(
-                    colliderA.get(),
-                    colliderB.get()
-                );
+                ContactManifold manifold = findCollision(colliderA, colliderB);
 
                 if (manifold.points.size() > 0){
+                    //LogDebug("Collision between : %s and %s and do they both have rb : %i", a.entity->name.c_str(), b.entity->name.c_str(), a.rigidBody.has_value() && b.rigidBody.has_value());
                     collisions.emplace_back(a, b, manifold);
                 }
             }
@@ -300,9 +321,7 @@ void solveCollisionOneRb(Collision& collision, float dt){
     }
 
 
-    auto rb = collision.objA.rigidBody->lock();
-
-    /*glm::mat3 worldInvInertiaTensor = localInvInertia;*/
+    auto rb = collision.objA.rigidBody.value();
 
     auto omega = rb->getOmega();
     auto velocity = rb->getCurrentVelocity();
@@ -336,7 +355,7 @@ void solveCollisionOneRb(Collision& collision, float dt){
 
             float coeffictionOfFriction = 0.03f;
 
-            rb->addForceAtPoint(totalFrictionImpulseVec * coeffictionOfFriction, point.position, Components::ForceMode::Impulse);
+            //rb->addForceAtPoint(totalFrictionImpulseVec * coeffictionOfFriction, point.position, Components::ForceMode::Impulse);
         }
 
 
@@ -364,15 +383,54 @@ void solveCollisionOneRb(Collision& collision, float dt){
     }
 }
 
-void solveCollisionBothRb(Collision& collision) {
+void solveCollisionBothRb(Collision& collision, float dt) {
+    auto rbA = collision.objA.rigidBody.value();
+    auto rbB = collision.objB.rigidBody.value();
+
+    auto omegaA = rbA->getOmega();
+    auto velocityA = rbA->getCurrentVelocity();
+    auto omegaB = rbB->getOmega();
+    auto velocityB = rbB->getCurrentVelocity();
+
+    PreStepInfo& preStep = collision.preStep;
+
+
+    for (int i=0;i<collision.manifold.points.size();i++){
+        ContactPoint& point = collision.manifold.points[i];
+
+        glm::vec3 velocityPointA = velocityA + glm::cross(omegaA, preStep.relativePositionA[i]);
+        glm::vec3 velocityPointB = velocityB + glm::cross(omegaB, preStep.relativePositionB[i]);
+
+        // contact constraint
+        {
+            float separatingVelocity = glm::dot(collision.manifold.normal, velocityPointA - velocityPointB);
+            if (separatingVelocity > 0.0f) continue;;
+
+            float baumgarteFactor = 0.2f;
+            float baumgarteImpulse = baumgarteFactor * collision.manifold.penetration / dt;
+
+            float bounciness = 0.5f;
+            float desiredVelocity = (-(1.0f + bounciness) * separatingVelocity) + baumgarteImpulse;
+            float lambda = desiredVelocity * preStep.normalEffectiveMass[i];
+
+            float newImpulse = std::max(collision.normalImpulse + lambda, 0.f);;
+            lambda = newImpulse - collision.normalImpulse;
+            collision.normalImpulse = newImpulse;
+
+            rbA->addForceAtPoint(collision.manifold.normal * lambda, collision.manifold.points[i].position, Components::ForceMode::Impulse);
+            rbB->addForceAtPoint(-collision.manifold.normal * lambda, collision.manifold.points[i].position, Components::ForceMode::Impulse);
+
+        }
+    }
 }
 
-
+// TODO: combine both one rb and both rb function into one (by using default values if not rb)
 void solveCollision(std::vector<Collision>& collisions, float dt) {
-    const int nbIteration = 13;
+    const int nbIteration = 15;
     for (int iteration=0;iteration<nbIteration;iteration++){
         for (Collision& collision : collisions) {
-            if (collision.objA.rigidBody.has_value() || collision.objB.rigidBody.has_value()) {
+            // xor operation only one of them
+            if (collision.objA.rigidBody.has_value() ^ collision.objB.rigidBody.has_value()) {
                 if (collision.objB.rigidBody.has_value()) {
                     std::swap(collision.objA, collision.objB);
                     collision.manifold.normal *= -1.0f;
@@ -380,7 +438,7 @@ void solveCollision(std::vector<Collision>& collisions, float dt) {
 
 
                 if (iteration == 0) {
-                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody->lock().get(), nullptr, collision.manifold);
+                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody.value(), nullptr, collision.manifold);
                 }
 
                 solveCollisionOneRb(collision, dt);
@@ -389,10 +447,10 @@ void solveCollision(std::vector<Collision>& collisions, float dt) {
 
             if (collision.objA.rigidBody.has_value() && collision.objB.rigidBody.has_value()) {
                 if (iteration == 0) {
-                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody->lock().get(), nullptr, collision.manifold);
+                    collision.preStep.calculatePreStepInfo(collision.objA.rigidBody.value(), collision.objB.rigidBody.value(), collision.manifold);
                 }
 
-                solveCollisionBothRb(collision);
+                solveCollisionBothRb(collision, dt);
                 continue;
             }
         }

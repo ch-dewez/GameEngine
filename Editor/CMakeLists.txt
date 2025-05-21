@@ -1,15 +1,15 @@
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS src/*.h)
 
-add_executable(Game ${SOURCES} ${HEADERS})
+add_executable(Editor ${SOURCES} ${HEADERS})
 
-target_include_directories(Game
+target_include_directories(Editor
     PRIVATE
         ${CMAKE_SOURCE_DIR}/GameEngineCore/src
         ${Vulkan_INCLUDE_DIRS}
 )
 
-target_link_libraries(Game
+target_link_libraries(Editor
     PRIVATE
         GameEngineCore
         glfw

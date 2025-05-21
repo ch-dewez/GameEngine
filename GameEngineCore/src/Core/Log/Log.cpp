@@ -5,6 +5,7 @@ namespace Engine {
 namespace Log {
 
 void Log::init(){
+#ifndef NDEBUG
     if (m_engineLogger){
         delete m_engineLogger;
     }
@@ -16,6 +17,7 @@ void Log::init(){
     m_engineLogger->setStartingString("[ENGINE]");
     m_gameLogger = new Logger();
     m_gameLogger->setStartingString("[GAME]");
+#endif
 };
 
 

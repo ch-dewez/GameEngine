@@ -7,8 +7,7 @@ namespace Engine {
 namespace Ressources {
 
 UniformBuffer::UniformBuffer(size_t size, uint32_t bufferCount)
-    : Buffer(bufferCount)
-    , m_bufferSize(size)
+    : Buffer(size, bufferCount)
 {
     createBuffer(size);
 }
@@ -31,7 +30,7 @@ void UniformBuffer::createBuffer(size_t size) {
 }
 
 void UniformBuffer::updateData(void* data, size_t size, uint32_t bufferIndex, uint32_t offset) {
-    if (offset + size > m_bufferSize) {
+    if (offset + size > m_size) {
         throw std::runtime_error("Update data size + offset larger than buffer size");
     }
     

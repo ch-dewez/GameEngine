@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 project(GameEngine VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Enable compile_commands.json generation
@@ -18,14 +18,40 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
     )
 endif()
 
-# Set default build type to Debug if not specified
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-    message(STATUS "Setting build type to Debug as none was specified")
-endif()
+set(CMAKE_CONFIGURATION_TYPES Debug Release Dist CACHE STRING "" FORCE)
 
-# Add debug symbols for Debug builds only
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+function(configure_build_settings target_name)
+  # Debug configuration
+  target_compile_definitions(${target_name} PRIVATE 
+    $<$<CONFIG:Debug>:DEBUG>)
+  
+  # Release configuration
+  target_compile_definitions(${target_name} PRIVATE 
+    $<$<CONFIG:Release>:NDEBUG>)
+  
+  # Dist configuration
+  target_compile_definitions(${target_name} PRIVATE 
+    $<$<CONFIG:Dist>:NDEBUG DIST>)
+  
+  # Debug symbols settings
+  if(MSVC)
+    # For MSVC, control debug information format
+    set_property(TARGET ${target_name} PROPERTY 
+      MSVC_DEBUG_INFORMATION_FORMAT 
+      "$<$<CONFIG:Debug,Release>:ProgramDatabase>$<$<CONFIG:Dist>:>")
+  else()
+    # For GCC/Clang
+    target_compile_options(${target_name} PRIVATE
+      $<$<CONFIG:Debug,Release>:-g>)
+  endif()
+  
+  # Runtime library settings (MSVC-specific)
+  if(MSVC)
+    set_property(TARGET ${target_name} PROPERTY 
+      MSVC_RUNTIME_LIBRARY 
+      "$<$<CONFIG:Debug>:MultiThreadedDebugDLL>$<$<CONFIG:Release,Dist>:MultiThreadedDLL>")
+  endif()
+endfunction()
 
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -107,4 +133,7 @@ FetchContent_MakeAvailable(glfw glm SPIRV-Reflect stb_image tiny_obj_loader)
 # Add main projects
 add_subdirectory(GameEngineCore)
 add_subdirectory(Game)
+
+configure_build_settings(GameEngineCore)
+configure_build_settings(Game)
 

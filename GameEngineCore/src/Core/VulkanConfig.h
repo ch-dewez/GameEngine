@@ -1,16 +1,17 @@
 #pragma once
+#include "vulkan/vulkan_core.h"
 #include <vector>
 #include <GLFW/glfw3.h>
 
 namespace VulkanConfig {
 // Instance validation layers
 static const std::vector<const char*> ValidationLayers = {
-    "VK_LAYER_KHRONOS_validation"
+    "VK_LAYER_KHRONOS_validation",
 };
 
 // Device extensions
 static const std::vector<const char*> DeviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     //"VK_KHR_portability_subset"
 };
 

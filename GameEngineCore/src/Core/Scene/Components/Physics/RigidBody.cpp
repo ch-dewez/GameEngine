@@ -8,10 +8,6 @@ namespace Components {
 RigidBody::RigidBody(glm::vec3 centerOfMass, glm::vec3 bodyInv)
     : Component(), m_IbodyInv(bodyInv), m_centerOfMass(centerOfMass) {}
 
-void RigidBody::start() {
-  // m_transform = m_entity->getComponent<Transform>().value();
-};
-
 glm::vec3 RigidBody::InvInertiaCuboidDensity(float forwardSize, float upSize,
                                              float righSize) {
   float volume = forwardSize * upSize * righSize;
@@ -36,29 +32,30 @@ glm::mat3 diagonal(glm::vec3 vec) {
 };
 
 void RigidBody::updatePositionAndRotations(float dt){
-  auto transform = m_transform.lock();
+
 
   // linear thing
   auto m_acceleration = m_forceAccum / mass;
   m_velocity += m_acceleration * dt;
   auto positionDelta = m_velocity  * dt;
-  transform->position += positionDelta;
+  m_transform->position += positionDelta;
 
   // angular :(
   m_angularMomentum += m_torqueAccum * dt;
 
   recomputeVariables();
 
-  glm::quat qDot = 0.5f * (glm::quat(0.0f, m_Omega) * transform->rotation) * dt;
+  glm::quat qDot = 0.5f * (glm::quat(0.0f, m_Omega) * m_transform->rotation) * dt;
 
-  transform->rotation += qDot;
-  transform->rotation = glm::normalize(transform->rotation);
+  m_transform->rotation += qDot;
+  m_transform->rotation = glm::normalize(m_transform->rotation);
 };
 
-void RigidBody::update(float dt) {
+void RigidBody::start(){
   m_transform = m_entity->getComponent<Transform>().value();
-  auto transform = m_transform.lock();
+}
 
+void RigidBody::update(float dt) {
   // removing gravity for implementing non-constraint rigidbody simpulation
   addForce(gravity, ForceMode::Acceleration);
 
@@ -68,21 +65,20 @@ void RigidBody::update(float dt) {
 };
 
 void RigidBody::recomputeVariables() {
-  auto transform = m_transform.lock();
-  glm::mat3 rotationMatrix = transform->getRotationMatrix();
+  glm::mat3 rotationMatrix = m_transform->getRotationMatrix();
   m_invInertiaTensor =
       rotationMatrix * diagonal(m_IbodyInv) * glm::transpose(rotationMatrix);
   m_Omega = m_invInertiaTensor * m_angularMomentum;
 };
 
 glm::vec3 RigidBody::getWorldCenterOfMass() {
-  auto transform = m_transform.lock();
-  return transform->transform(m_centerOfMass);
+
+  return m_transform->transform(m_centerOfMass);
 };
 
 void RigidBody::addForceAtPoint(glm::vec3 force, glm::vec3 point,
                                 ForceMode mode, bool recompute) {
-  auto transform = m_transform.lock();
+
   auto pt = point - getWorldCenterOfMass();
 
   addTorque(glm::cross(pt, force), mode, false);
@@ -100,7 +96,7 @@ void RigidBody::addForceAtBodyPoint(const glm::vec3 &force,
 }
 
 glm::vec3 RigidBody::getPointInWorldSpace(const glm::vec3 &point) const {
-  return m_transform.lock()->transform(point);
+  return m_transform->transform(point);
 }
 
 void RigidBody::addTorque(glm::vec3 torque, ForceMode mode, bool recompute) {

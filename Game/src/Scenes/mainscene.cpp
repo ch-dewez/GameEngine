@@ -7,126 +7,108 @@
 
 namespace Game {
 
-const std::vector<Material::PosNormalTexCoordVertex> verticesTexCoord = {
-    // Front face (normal: 0, 0, 1)
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},   // 0
-    {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1
-    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},   // 2
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3
-
-    // Back face (normal: 0, 0, -1)
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},  // 4
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},  // 5
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},  // 6
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},  // 7
-
-    // Left face (normal: -1, 0, 0)
-    {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // 8
-    {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},  // 9
-    {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},  // 10
-    {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},  // 11
-
-    // Right face (normal: 1, 0, 0)
-    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},   // 12
-    {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},   // 13
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},   // 14
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},   // 15
-
-    // Top face (normal: 0, 1, 0)
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},   // 16
-    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // 17
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},   // 18
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},   // 19
-
-    // Bottom face (normal: 0, -1, 0)
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},  // 20
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},  // 21
-    {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},  // 22
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}}   // 23
+// Positions for cube vertices (24 vertices, duplicated as needed)
+const std::vector<glm::vec3> positions = {
+    // Front face
+    {-0.5f, -0.5f,  0.5f},  // 0
+    { 0.5f, -0.5f,  0.5f},  // 1
+    { 0.5f,  0.5f,  0.5f},  // 2
+    {-0.5f,  0.5f,  0.5f},  // 3
+    // Back face
+    {-0.5f, -0.5f, -0.5f},  // 4
+    { 0.5f, -0.5f, -0.5f},  // 5
+    { 0.5f,  0.5f, -0.5f},  // 6
+    {-0.5f,  0.5f, -0.5f},  // 7
+    // Left face
+    {-0.5f, -0.5f, -0.5f},  // 8
+    {-0.5f, -0.5f,  0.5f},  // 9
+    {-0.5f,  0.5f,  0.5f},  // 10
+    {-0.5f,  0.5f, -0.5f},  // 11
+    // Right face
+    { 0.5f, -0.5f,  0.5f},  // 12
+    { 0.5f, -0.5f, -0.5f},  // 13
+    { 0.5f,  0.5f, -0.5f},  // 14
+    { 0.5f,  0.5f,  0.5f},  // 15
+    // Top face
+    {-0.5f,  0.5f,  0.5f},  // 16
+    { 0.5f,  0.5f,  0.5f},  // 17
+    { 0.5f,  0.5f, -0.5f},  // 18
+    {-0.5f,  0.5f, -0.5f},  // 19
+    // Bottom face
+    {-0.5f, -0.5f, -0.5f},  // 20
+    { 0.5f, -0.5f, -0.5f},  // 21
+    { 0.5f, -0.5f,  0.5f},  // 22
+    {-0.5f, -0.5f,  0.5f}   // 23
 };
 
-const std::vector<Material::PosNormalVertex> verticesColor = {
+// Normals for each vertex (24 vertices)
+const std::vector<glm::vec3> normals = {
     // Front face (normal: 0, 0, 1)
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 0
-    {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 1
-    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 2
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},   // 3
-
+    {0.0f, 0.0f, 1.0f},  // 0
+    {0.0f, 0.0f, 1.0f},  // 1
+    {0.0f, 0.0f, 1.0f},  // 2
+    {0.0f, 0.0f, 1.0f},  // 3
     // Back face (normal: 0, 0, -1)
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},  // 4
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},  // 5
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},  // 6
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},  // 7
-
+    {0.0f, 0.0f, -1.0f},  // 4
+    {0.0f, 0.0f, -1.0f},  // 5
+    {0.0f, 0.0f, -1.0f},  // 6
+    {0.0f, 0.0f, -1.0f},  // 7
     // Left face (normal: -1, 0, 0)
-    {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},  // 8
-    {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},  // 9
-    {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},  // 10
-    {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},  // 11
-
+    {-1.0f, 0.0f, 0.0f},  // 8
+    {-1.0f, 0.0f, 0.0f},  // 9
+    {-1.0f, 0.0f, 0.0f},  // 10
+    {-1.0f, 0.0f, 0.0f},  // 11
     // Right face (normal: 1, 0, 0)
-    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},   // 12
-    {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},   // 13
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},   // 14
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},   // 15
-
+    {1.0f, 0.0f, 0.0f},  // 12
+    {1.0f, 0.0f, 0.0f},  // 13
+    {1.0f, 0.0f, 0.0f},  // 14
+    {1.0f, 0.0f, 0.0f},  // 15
     // Top face (normal: 0, 1, 0)
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},   // 16
-    {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},   // 17
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},   // 18
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},   // 19
-
+    {0.0f, 1.0f, 0.0f},  // 16
+    {0.0f, 1.0f, 0.0f},  // 17
+    {0.0f, 1.0f, 0.0f},  // 18
+    {0.0f, 1.0f, 0.0f},  // 19
     // Bottom face (normal: 0, -1, 0)
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},  // 20
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},  // 21
-    {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},  // 22
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}}   // 23
+    {0.0f, -1.0f, 0.0f},  // 20
+    {0.0f, -1.0f, 0.0f},  // 21
+    {0.0f, -1.0f, 0.0f},  // 22
+    {0.0f, -1.0f, 0.0f}   // 23
 };
 
+// Texture coordinates for each vertex (24 vertices)
+const std::vector<glm::vec2> texCoords = {
+    // Front face
+    {0.0f, 0.0f},  // 0
+    {1.0f, 0.0f},  // 1
+    {1.0f, 1.0f},  // 2
+    {0.0f, 1.0f},  // 3
+    // Back face
+    {1.0f, 0.0f},  // 4
+    {0.0f, 0.0f},  // 5
+    {0.0f, 1.0f},  // 6
+    {1.0f, 1.0f},  // 7
+    // Left face
+    {0.0f, 0.0f},  // 8
+    {1.0f, 0.0f},  // 9
+    {1.0f, 1.0f},  // 10
+    {0.0f, 1.0f},  // 11
+    // Right face
+    {0.0f, 0.0f},  // 12
+    {1.0f, 0.0f},  // 13
+    {1.0f, 1.0f},  // 14
+    {0.0f, 1.0f},  // 15
+    // Top face
+    {0.0f, 0.0f},  // 16
+    {1.0f, 0.0f},  // 17
+    {1.0f, 1.0f},  // 18
+    {0.0f, 1.0f},  // 19
+    // Bottom face
+    {0.0f, 0.0f},  // 20
+    {1.0f, 0.0f},  // 21
+    {1.0f, 1.0f},  // 22
+    {0.0f, 1.0f}   // 23
+};
 
-/*const std::vector<Vertex> vertices = {*/
-/*    // Front face*/
-/*    {{-0.5f, -0.5f, 0.5f}},  // 0*/
-/*    {{0.5f, -0.5f, 0.5f}},   // 1*/
-/*    {{0.5f, 0.5f, 0.5f}},    // 2*/
-/*    {{-0.5f, 0.5f, 0.5f}},   // 3*/
-/**/
-/*    // Back face*/
-/*    {{-0.5f, -0.5f, -0.5f}}, // 4*/
-/*    {{0.5f, -0.5f, -0.5f}},  // 5*/
-/*    {{0.5f, 0.5f, -0.5f}},   // 6*/
-/*    {{-0.5f, 0.5f, -0.5f}}   // 7*/
-/*};*/
-
-/*const std::vector<uint16_t> indices = {*/
-/*    // Front face (CCW from front)*/
-/*    0, 2, 1,    0, 3, 2,*/
-/*    // Back face (CCW from back)*/
-/*    4, 6, 5,    4, 7, 6,*/
-/*    // Left face (CCW from left)*/
-/*    8, 10, 9,   8, 11, 10,*/
-/*    // Right face (CCW from right)*/
-/*    12, 14, 13, 12, 15, 14,*/
-/*    // Top face (CCW from top)*/
-/*    16, 18, 17, 16, 19, 18,*/
-/*    // Bottom face (CCW from bottom)*/
-/*    20, 22, 21, 20, 23, 22*/
-/*};*/
-
-/*const std::vector<uint16_t> indices = {*/
-/*    // Front face*/
-/*    0, 1, 2,    2, 3, 0,*/
-/*    // Back face*/
-/*    4, 5, 6,    6, 7, 4,*/
-/*    // Left face*/
-/*    8, 9, 10,   10, 11, 8,*/
-/*    // Right face*/
-/*    12, 13, 14, 14, 15, 12,*/
-/*    // Top face*/
-/*    16, 17, 18, 18, 19, 16,*/
-/*    // Bottom face*/
-/*    20, 21, 22, 22, 23, 20*/
-/*};*/
 
 const std::vector<uint32_t> indices = {
     // Front face (CCW from front)
@@ -144,7 +126,7 @@ const std::vector<uint32_t> indices = {
 };
 
 
-void MainScene::initialize(){
+void MainScene::initObject(){
     auto blinnPhongColorPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertColor.glsl.spv", "shaders/GameEngineCore/blinnPhongFragColor.glsl.spv", Material::PosNormalVertex::getBindingDescription(), Material::PosNormalVertex::getAttributeDescriptions());
     auto blinnPhongTexPipelineConfig = Engine::Ressources::PipelineConfigInfo::defaultPipelineConfigInfo("shaders/GameEngineCore/blinnPhongVertText.glsl.spv", "shaders/GameEngineCore/blinnPhongFragText.glsl.spv", Material::PosNormalTexCoordVertex::getBindingDescription(), Material::PosNormalTexCoordVertex::getAttributeDescriptions());
     auto blinnPhongColorPipeline = std::make_unique<Engine::Ressources::Pipeline>(blinnPhongColorPipelineConfig);
@@ -184,131 +166,134 @@ void MainScene::initialize(){
     matStruct3.shininess = 1.0;
     mat3->updateData(&matStruct3);
 
-    auto cubeTexMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));
-    auto cubeMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));
+    /*auto cubeTexMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesTexCoord.data(), (size_t)verticesTexCoord.size() * sizeof(verticesTexCoord[0]));*/
+
+    auto cubeTexMesh = std::make_shared<Engine::Ressources::Mesh>();
+    cubeTexMesh->setOrCreateChannelAndCopyData("positions", (void*)positions.data(), sizeof(positions[0]), positions.size());
+    cubeTexMesh->setOrCreateChannelAndCopyData("normals", (void*)normals.data(), sizeof(normals[0]), normals.size());
+    cubeTexMesh->setOrCreateChannelAndCopyData("texture coord", (void*)texCoords.data(), sizeof(texCoords[0]), texCoords.size());
+    cubeTexMesh->setIndices(std::vector(indices));
+    cubeTexMesh->uploadDataToGpu();
+    cubeTexMesh->removeDataFromCpu();
+
+    /*//auto cubeMesh = std::make_shared<Engine::Ressources::Mesh>(indices, (void*)verticesColor.data(), (size_t)verticesColor.size() * sizeof(verticesColor[0]));*/
+    auto cubeMesh = std::make_shared<Engine::Ressources::Mesh>();
+    cubeMesh->setOrCreateChannelAndCopyData("positions", (void*)positions.data(), sizeof(positions[0]), positions.size());
+    cubeMesh->setOrCreateChannelAndCopyData("normals", (void*)normals.data(), sizeof(normals[0]), normals.size());
+    cubeMesh->setIndices(indices);
+    cubeMesh->uploadDataToGpu();
+    cubeMesh->removeDataFromCpu();
     ressourceManager.loadMesh("cubeTexMesh", cubeTexMesh);
     ressourceManager.loadMesh("cubeMesh", cubeMesh);
 
+    auto model = std::make_shared<Engine::Ressources::Mesh>();
+    {
+        model->loadObj("Assets/Game/model.obj");
+        LogDebug("finish loading model");
+        model->uploadDataToGpu();
+        model->removeDataFromCpu();
+        ressourceManager.loadMesh("model", model);
+    }
+
+    auto modelTextureInfo = Engine::Ressources::Texture::TextureCreateInfo::getDefault("Assets/Game/modelTexture.png");
+    auto modelTexture = std::make_shared<Engine::Ressources::Texture>(modelTextureInfo);
+    ressourceManager.loadTexture("model Texture", modelTexture);
+    std::vector<VkDescriptorImageInfo> modelImageiNfo = {modelTexture->createDescriptorImageInfo()};
+    auto modelMat = std::make_shared<Engine::Ressources::Material>(blinnPhongTexTemplate, sizeof(Material::blinnPhongText), &modelImageiNfo);
+    ressourceManager.loadMaterial("model mat", modelMat);
+    auto modelMatStruct = Material::blinnPhongText();
+    modelMatStruct.shininess = 1.0;
+    modelMat->updateData(&matStruct3);
+
 
     {
-        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("First entity"));
-        addEntity(entity);
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat3, cubeTexMesh));
+        auto& entity = addEntity("model");
+        auto& transform = entity.addComponent<Engine::Components::Transform>();
+        auto& renderer = entity.addComponent<Engine::Components::MeshRenderer>(modelMat, model);
+        transform.rotation = {-0.0f, 0.0f, 0.7071068f, 0.7071068f};
+        transform.scale = {10.0f, 10.f, 10.f};
+    }
 
-        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
+    {
+        auto& entity = addEntity("First entity");
+        auto& renderer = entity.addComponent<Engine::Components::MeshRenderer>(mat3, cubeTexMesh);
+        auto& transform = entity.addComponent<Engine::Components::Transform>();
 
-        //transform->position.y -= 1.5;
-
-        std::shared_ptr<Components::BoxMovement> boxMOvement (new Components::BoxMovement());
-        glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform->scale.x, transform->scale.y, transform->scale.z);
-        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody(glm::vec3(0.0f), ibodyinv));
+        transform.position.y += 5.5;
+        glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform.scale.x, transform.scale.y, transform.scale.z);
+        auto& rb = entity.addComponent<Engine::Components::RigidBody>(glm::vec3(0.0f), ibodyinv);
         //rb->setGravity(glm::vec3(0.0f));
         //rb->m_angularMomentum = {1.0, 1.0, 0.0};
         //rb->addForce(glm::vec3(-0.76f, 0.0f, 0.0f), Engine::Components::ForceMode::Impulse);
-        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
-        //entity->addComponent(boxMOvement);
-        entity->addComponent(collider);
-        entity->addComponent(transform);
-        entity->addComponent(meshRenderer);
-        entity->addComponent(rb);
+        entity.addComponent<Engine::Components::CubeCollider>();
+    }
+    /**/
+    /*{*/
+    /*    auto& entity = addEntity("second entity");*/
+    /*    auto& transform = entity.addComponent<Engine::Components::Transform>();*/
+    /*    transform.position.y +=2.5;*/
+    /*    entity.addComponent<Engine::Components::MeshRenderer>(mat, cubeMesh);*/
+    /**/
+    /*    glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform.scale.x, transform.scale.y, transform.scale.z);*/
+    /*    auto& rb = entity.addComponent<Engine::Components::RigidBody>(glm::vec3(0.0f), ibodyinv);*/
+    /**/
+    /*    entity.addComponent<Engine::Components::CubeCollider>();*/
+    /*}*/
+
+    {
+        auto& entity = addEntity("Camera");
+        entity.addComponent<Engine::Components::Transform>();
+        entity.addComponent<Engine::Components::Camera>();
+        entity.addComponent<Components::CameraMovement>();
+        entity.tags.push_back("Main Camera");
+    }
+
+    {
+        auto& entity = addEntity("plane");
+        auto& transform = entity.addComponent<Engine::Components::Transform>();
+        transform.position.y -=3.0;
+        transform.scale = {100.0, 0.1, 100.0};
+        entity.addComponent<Engine::Components::MeshRenderer>(mat, cubeMesh);
+        entity.addComponent<Engine::Components::CubeCollider>();
+    }
+
+    //TODO: make prefab work
+
+    /*{*/
+    /*    Engine::Entities::Camera& camera = addEntity<Engine::Entities::Camera>("Camera");*/
+    /*    camera.load();*/
+    /**/
+    /*    camera.addComponent<Components::CameraMovement>();*/
+    /**/
+    /*    Engine::Components::Transform& transform = *camera.getComponent<Engine::Components::Transform>().value();*/
+    /*    transform.scale = {0.1, 0.1, 0.1};*/
+    /*}*/
+    
+    {
+        auto& entity = addEntity("dir ligh");
+        auto& dirLight = entity.addComponent<Engine::Components::DirectionalLight>();
+        dirLight.lightInfo.dir = glm::normalize(glm::vec3(-0.3, 1.0, 1.0));
+        dirLight.lightInfo.color = glm::vec3(1.0, 1.0, 1.0);
     }
     
     {
-        std::shared_ptr<Engine::Entity> entity (new Engine::Entity("fourth entity"));
-        addEntity(entity);
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat, cubeMesh));
-        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
-        std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
-
-
-        glm::vec3 ibodyinv = Engine::Components::RigidBody::InvInertiaCuboidDensity(transform->scale.x, transform->scale.y, transform->scale.z);
-        std::shared_ptr<Engine::Components::RigidBody>  rb (new Engine::Components::RigidBody(glm::vec3(0.0f), ibodyinv));
-        //entity->addComponent(rb);
-        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
-        entity->addComponent(collider);
-        //entity->addComponent(boxMovement);
-        //boxMovement->amplitude *= -1;
-        entity->addComponent(meshRenderer);
-        entity->addComponent(transform);
-
-        transform->position.y -=2.5;
-        transform->scale.x =1.2;
-        transform->scale.z =1.2;
-        transform->scale.y =1.2;
-        transform->position.x -= 0.8f;
-        //transform->setForwardVector(glm::vec3(0.5f, 0.5f, 0.5f));
-    }
-    
-    {
-        std::shared_ptr<Engine::Entity> plane (new Engine::Entity("plane"));
-        addEntity(plane);
-        std::shared_ptr<Engine::Components::MeshRenderer> meshRenderer (new Engine::Components::MeshRenderer(mat2, cubeMesh));
-        std::shared_ptr<Engine::Components::Transform> transform (new Engine::Components::Transform());
-        plane->addComponent(meshRenderer);
-        plane->addComponent(transform);
-
-        std::shared_ptr<Engine::Components::CubeCollider> collider(new Engine::Components::CubeCollider());
-        plane->addComponent(collider);
-        std::shared_ptr<Components::BoxMovement> boxMovement (new Components::BoxMovement());
-        boxMovement->amplitude = -2.0;
-        //plane->addComponent(boxMovement);
-
-        transform->position.y -= 3.0;
-
-        transform->scale.y = 0.01;
-        transform->scale.x = 100.0;
-        transform->scale.z = 100.0;
-        //transform->setForwardVector(glm::vec3(1.0, -0.1, 0.0f));
-    }
-
-
-    {
-        std::shared_ptr<Engine::Entities::Camera> camera (new Engine::Entities::Camera("Camera"));
-        addEntity(camera);
-        camera->load();
-
-        std::shared_ptr<Components::CameraMovement> cameraMovement (new Components::CameraMovement());
-        camera->addComponent(cameraMovement);
-
-        auto transform = camera->getComponent<Engine::Components::Transform>()->lock();
-        transform->position.x += 2.0f;
-        transform->position.z += 2.0f;
-        transform->position.y += 1.0f;
-        transform->setForwardVector(glm::vec3(-0.0f, 0.0f, -1.0f));
-        transform->position -= transform->getForwardVector() * 3.0f;
-    }
-    
-    {
-        std::shared_ptr<Engine::Entity> light (new Engine::Entity("Light"));
-        addEntity(light);
-        std::shared_ptr<Engine::Components::DirectionalLight> dirLight (new Engine::Components::DirectionalLight());
-        dirLight->lightInfo.dir = glm::normalize(glm::vec3(0.3, 1.0, 1.0));
-        dirLight->lightInfo.color = glm::vec3(1.0, 1.0, 1.0);
-        light->addComponent(dirLight);
-    }
-    
-    {
-        std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light"));
-        //addEntity(pointLight);
-        std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight());
-        pointLightComp->lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 0.0, 1.0));
-        pointLightComp->lightInfo.color = glm::vec4(1.0, 0.0, 0.2, 1.0);
-        pointLightComp->lightInfo.constantAttenuation = 1.0f;
-        pointLightComp->lightInfo.linearAttenuation = 0.09f;
-        pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
-        pointLight->addComponent(pointLightComp);
+        auto& entity = addEntity("point ligh");
+        auto& pointLight = entity.addComponent<Engine::Components::PointLight>();
+        pointLight.lightInfo.pos = glm::normalize(glm::vec4(0.0, 1.0, 0.0, 1.0));
+        pointLight.lightInfo.color = glm::vec4(1.0, 0.0, 0.2, 1.0);
+        pointLight.lightInfo.constantAttenuation = 1.0f;
+        pointLight.lightInfo.linearAttenuation = 0.09f;
+        pointLight.lightInfo.quadraticAttenuation = 0.032f;
     }
 
     {
-        std::shared_ptr<Engine::Entity> pointLight (new Engine::Entity("point Light green"));
-        addEntity(pointLight);
-        std::shared_ptr<Engine::Components::PointLight> pointLightComp (new Engine::Components::PointLight());
-        pointLightComp->lightInfo.pos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        pointLightComp->lightInfo.color = glm::vec4(0.0, 1.0, 0.2, 1.0);
-        pointLightComp->lightInfo.constantAttenuation = 1.0f;
-        pointLightComp->lightInfo.linearAttenuation = 0.09f;
-        pointLightComp->lightInfo.quadraticAttenuation = 0.032f;
-        pointLight->addComponent(pointLightComp);
+        auto& entity = addEntity("point ligh");
+        auto& pointLight = entity.addComponent<Engine::Components::PointLight>();
+        pointLight.lightInfo.pos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pointLight.lightInfo.color = glm::vec4(0.0, 1.0, 0.2, 1.0);
+        pointLight.lightInfo.constantAttenuation = 1.0f;
+        pointLight.lightInfo.linearAttenuation = 0.09f;
+        pointLight.lightInfo.quadraticAttenuation = 0.032f;
     }
 };
 }

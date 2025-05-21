@@ -24,7 +24,7 @@ target_compile_definitions(GameEngineCore
     PUBLIC 
         GLFW_INCLUDE_VULKAN
         STB_IMAGE_IMPLEMENTATION
-        TINY_OBJ_LOADER_IMPLEMENTATION
+        TINYOBJLOADER_IMPLEMENTATION
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG>
         $<$<CONFIG:Release>:NDEBUG>

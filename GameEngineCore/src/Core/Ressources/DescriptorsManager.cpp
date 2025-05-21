@@ -2,6 +2,8 @@
 #include "Core/Renderer/VulkanApi.h"
 #include "vulkan/vulkan_core.h"
 #include <algorithm>
+#include "Core/Log/Log.h"
+#include <format>
 
 namespace Engine {
 namespace Ressources {
@@ -13,6 +15,7 @@ void DescriptorBuilder::Init(){
 };
 
 void DescriptorBuilder::DestroyAll(){
+    LogDebug("destryoing everythign");
     DescriptorLayoutCache::Instance().cleanup();
     DescriptorAllocator::Instance().destroy_pools();
 };
@@ -172,7 +175,9 @@ size_t DescriptorLayoutCache::DescriptorLayoutInfo::hash() const{
 void DescriptorLayoutCache::cleanup(){
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
     //delete every descriptor layout held
+    LogDebug(m_layoutCache.size());
     for (auto pair : m_layoutCache){
+        LogDebug("destroying set layout");
         api.destroyDescriptorSetLayout(pair.second, nullptr);
     }
 }

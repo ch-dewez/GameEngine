@@ -88,7 +88,7 @@ std::map<uint32_t, VkDescriptorSetLayout> reflectShaderModule(
 
     // Create final descriptor set layouts
     std::map<uint32_t, VkDescriptorSetLayout> finalLayouts;
-    auto descriptorLayoutCache = DescriptorLayoutCache::Instance();
+    auto& descriptorLayoutCache = DescriptorLayoutCache::Instance();
 
     for (const auto& [setIndex, layoutData] : setLayouts) {
         std::vector<VkDescriptorSetLayoutBinding> bindings;

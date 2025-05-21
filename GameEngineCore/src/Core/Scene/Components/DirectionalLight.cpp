@@ -2,7 +2,7 @@
 #include "DirectionalLight.h"
 
 namespace Engine {
-namespace Components {
+namespace Components {
 
 DirectionalLight::DirectionalLight()
 {

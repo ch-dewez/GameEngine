@@ -6,7 +6,7 @@ namespace Engine {
 namespace Ressources {
 
 VertexBuffer::VertexBuffer( void* data, size_t size)
-    : Buffer(1) 
+    : Buffer(size, 1) 
 {
     createBuffer(data, size);
 }

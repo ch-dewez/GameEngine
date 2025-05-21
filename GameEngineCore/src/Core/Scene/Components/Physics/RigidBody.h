@@ -95,7 +95,7 @@ private:
   glm::vec3 m_angularMomentum; // L(t)
   glm::vec3 m_Omega = {0.0f, 0.0f, 0.0f};
 
-  std::weak_ptr<Transform> m_transform;
+  Transform* m_transform;
 };
 
 } // namespace Components

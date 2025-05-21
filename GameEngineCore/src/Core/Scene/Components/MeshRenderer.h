@@ -9,8 +9,8 @@ namespace Components {
 
 class MeshRenderer: public Renderer {
 public:
-
     MeshRenderer(std::shared_ptr<Ressources::Material> material, std::shared_ptr<Ressources::Mesh> mesh);
+    ~MeshRenderer();
 
     void render(Engine::Renderer::Renderer::FrameInfo& frameInfo) override;
 

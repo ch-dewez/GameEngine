@@ -11,7 +11,7 @@
 
 static void GLFWErrorCallback(int error, const char* description)
 {
-    LogEngineError("GLFW ERROR %i %s", error, description);
+    LogError("GLFW ERROR ", error, " ", description);
 };
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
@@ -22,13 +22,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 
     // idk what verbose means
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT){
-        LogEngineWarning("Vulkan Validation Layer %s", pCallbackData->pMessage);
+        LogInfo("Vulkan Validation Layer ", pCallbackData->pMessage);
     }else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT){
-        LogEngineInfo("Vulkan Validation Layer %s", pCallbackData->pMessage);
+        LogInfo("Vulkan Validation Layer ", pCallbackData->pMessage);
     }else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT){
-        LogEngineWarning("Vulkan Validation Layer %s", pCallbackData->pMessage);
+        LogWarning("Vulkan Validation Layer ", pCallbackData->pMessage);
     }else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT){
-        LogEngineError("Vulkan Validation Layer %s", pCallbackData->pMessage);
+        LogError("Vulkan Validation Layer ", pCallbackData->pMessage);
     }
 
     return VK_FALSE;

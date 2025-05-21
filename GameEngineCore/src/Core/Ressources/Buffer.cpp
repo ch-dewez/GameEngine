@@ -1,6 +1,8 @@
 #include "Buffer.h"
 #include "Core/Renderer/VulkanApi.h"
 #include "vulkan/vulkan_core.h"
+#include "Core/Log/Log.h"
+#include <cstdint>
 #include <stdexcept>
 
 namespace Engine {
@@ -13,12 +15,22 @@ Buffer::Buffer(uint32_t bufferCount)
 {
 }
 
+Buffer::Buffer(uint32_t size, uint32_t bufferCount)
+: m_buffers(bufferCount, VK_NULL_HANDLE)  // Initialize with null handles
+    , m_buffersMemory(bufferCount, VK_NULL_HANDLE)  // Initialize with null handles
+    , m_mappedMemory(bufferCount, nullptr) 
+    , m_size(size)
+{
+
+}
+
 Buffer::~Buffer() {
     Renderer::VulkanApi& api = Renderer::VulkanApi::Instance();
     for (size_t i = 0; i < m_buffers.size(); i++) {
         if (m_mappedMemory[i]) {
             api.unmapMemory(m_buffersMemory[i]);
         }
+        LogDebug("destorying buffer and buffer memoery");
         api.destroyBuffer(m_buffers[i], nullptr);
         api.freeMemory(m_buffersMemory[i], nullptr);
     }

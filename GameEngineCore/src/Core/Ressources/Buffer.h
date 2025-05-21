@@ -1,6 +1,7 @@
 #pragma once
 #include "vulkan/vulkan_core.h"
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <vector>
 #include "Core/Renderer/VulkanApi.h"
 
@@ -10,6 +11,7 @@ namespace Ressources {
 class Buffer {
 public:
     Buffer(uint32_t bufferCount = 1);
+    Buffer(uint32_t size, uint32_t bufferCount = 1);
     
     ~Buffer();
 
@@ -26,11 +28,14 @@ public:
 
     void mapMemory(VkDeviceSize size, VkMemoryMapFlags flags, void** ppData, uint32_t index = 0);
     void unmapMemory(uint32_t index = 0);
+public:
+    uint32_t m_size;
 
 protected:
     std::vector<VkBuffer> m_buffers;
     std::vector<VkDeviceMemory> m_buffersMemory;
     std::vector<void*> m_mappedMemory;  // For persistent mapping if needed
+
 
 public:
     static uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);

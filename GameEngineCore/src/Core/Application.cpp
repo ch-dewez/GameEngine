@@ -12,12 +12,12 @@
 namespace Engine {
 
 Application::Application(createInfo& createInfo)
-: Application(createInfo.title, createInfo.width, createInfo.height, createInfo.defaultScene)
+: Application(createInfo.title, createInfo.width, createInfo.height, createInfo.defaultScene, createInfo.maxDeltaTime)
 {
 };
 
-Application::Application(const char* title, uint32_t width, uint32_t height, Engine::Scene* defaultScene)
-: m_window(title, width, height)
+Application::Application(const char* title, uint32_t width, uint32_t height, Engine::Scene* defaultScene, float maxDeltaTime)
+: m_window(title, width, height), m_maxDeltaTime(maxDeltaTime)
 {
     Engine::Renderer::VulkanApi::Init(m_window);
     Engine::Ressources::RessourceManager::Init();
@@ -54,6 +54,10 @@ void Application::Run()
     {
         float currentTime = glfwGetTime();
         float dt = currentTime - lastTime;
+        if (m_maxDeltaTime > 0) {
+            dt = std::min(m_maxDeltaTime, dt);
+        }
+
         lastTime = currentTime;
 
         m_scene->updateComponents(dt);

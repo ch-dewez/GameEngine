@@ -4,6 +4,7 @@
 #include "Core/Scene/Components/Transform.h"
 #include "Core/Ressources/DescriptorsManager.h"
 #include "Core/Renderer/DefaultRenderer.h"
+#include "Core/Log/Log.h"
 #include "vulkan/vulkan_core.h"
 #include <cstdint>
 #include <memory>
@@ -16,13 +17,15 @@ MeshRenderer::MeshRenderer(std::shared_ptr<Ressources::Material> material, std::
 {
 }
 
-
+MeshRenderer::~MeshRenderer(){
+    LogDebug("callingn mesh renderer deconstructor");
+}
 
 void MeshRenderer::render(Engine::Renderer::Renderer::FrameInfo& frameInfo) {
     auto& api = ::Engine::Renderer::VulkanApi::Instance();
 
     // Update and bind the model matrix
-    glm::mat4 model = m_entity->getComponent<Transform>().value().lock()->getModelMatrix();
+    glm::mat4 model = m_entity->getComponent<Transform>().value()->getModelMatrix();
     uint32_t offset = m_modelBufferIndex * sizeof(glm::mat4);
     frameInfo.modelsBuffer->updateData(&model, sizeof(glm::mat4), frameInfo.frameIndex, offset);
 

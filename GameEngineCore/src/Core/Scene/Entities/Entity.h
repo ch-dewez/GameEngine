@@ -9,51 +9,62 @@ namespace Engine {
 
 class Entity {
 public:
-    Entity(std::string name);
+  friend Scene;
+  Entity(std::string name);
+  ~Entity();
 
-    void updateComponents(float dt);
+  // same hack
+  template <typename T, typename, typename...> struct dependent_type {
+    using type = T;
+  };
+  template <typename T, typename P0, typename... P>
+  using dependent_type_t = typename dependent_type<T, P0, P...>::type;
 
-    void addComponent(std::shared_ptr<Components::Component> component);
+  template <typename T, class... Args> T &addComponent(Args... args) {
+    T &component = m_scene->addComponent<T>(args...);
+    ((dependent_type_t<Components::Component &, T>)component).setEntity(this);
+    return component;
+  };
 
-    template<typename T>
-    std::vector<std::weak_ptr<T>> getComponents() {
-        static_assert(std::is_base_of<Components::Component, T>::value, 
-        "T must inherit from Component");
+  template <typename T> std::vector<T &> getComponents() {
+    static_assert(std::is_base_of<Components::Component, T>::value,
+                  "T must inherit from Component");
 
-        std::vector<std::weak_ptr<T>> components;
+    Utils::StaticArray<T> &components = m_scene->getComponents<T>();
+    std::vector<T &> filtered = components.getFilteredVector([this](
+                                                                 T &element) {
+      return ((dependent_type_t<Components::Component &, T>)element).m_entity ==
+             this;
+    });
 
-        for (const auto& component : m_components) {
-            if (std::shared_ptr<T> cast = std::dynamic_pointer_cast<T>(component)) {
-                components.push_back(cast);
-            }
-        }
+    return filtered;
+  };
 
-        return components;
+  template <typename T> std::optional<T*> getComponent() {
+    static_assert(std::is_base_of<Components::Component, T>::value,
+                  "T must inherit from Component");
+
+    Utils::StaticArray<T> &components = m_scene->getComponents<T>();
+
+    for (T &component : components) {
+      if (((dependent_type_t<Components::Component &, T>)component).m_entity ==
+          this) {
+        return &component;
+      }
     }
+    return {};
+  };
 
-    template<typename T>
-    std::optional<std::weak_ptr<T>> getComponent() {
-        static_assert(std::is_base_of<Components::Component, T>::value, 
-        "T must inherit from Component");
+  void setScene(Scene *scene) { m_scene = scene; };
 
-        for (const auto& component : m_components) {
-            if (auto cast = std::dynamic_pointer_cast<T>(component)) {
-                return cast;
-            }
-        }
-        return {};
-    }
-
-    void setScene(Scene* scene) {m_scene = scene;};
 public:
-    UUID uuid;
-    std::string name;
-    std::vector<std::string> tags;
-private:
+  UUID uuid;
+  std::string name;
+  std::vector<std::string> tags;
 
 private:
-    Scene* m_scene;
-    std::vector<std::shared_ptr<Components::Component>> m_components;
+private:
+  Scene *m_scene;
 };
 
 } // namespace Engine

@@ -25,8 +25,8 @@ public:
     uint32_t allocateModelBufferIndex(); // Returns next available index
     void deallocateModelBufferIndex(uint32_t index); // Deallocates the given index
 
-    VkDescriptorSetLayout globalDescriptorLayout;
-    VkDescriptorSetLayout modelDescriptorLayout;
+    /*VkDescriptorSetLayout globalDescriptorLayout;*/
+    /*VkDescriptorSetLayout modelDescriptorLayout;*/
 private:
     std::vector<VkDescriptorSet> m_globalDescriptorSets;
     std::unique_ptr<Engine::Ressources::UniformBuffer> m_globalUniformBuffer;

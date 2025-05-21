@@ -16,6 +16,7 @@ public:
     float mouseSensitivity = 0.002f;
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_startTime;
+    Engine::Components::Transform* m_transform = nullptr;
 };
 
 } // namespace Components
